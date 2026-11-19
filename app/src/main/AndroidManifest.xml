@@ -13,6 +13,7 @@
 
     <!-- Nødvendig fra Android 11 for at finde tekst-til-tale-motoren -->
     <queries>
+        <package android:name="com.google.android.tts" />
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>

@@ -178,4 +178,14 @@ class RouteEngineTest {
         assertEquals("tournez à droite vers la Karl-Marx-Allee", Lang.FR.strings.turn(1, false, "Karl-Marx-Allee"))
         assertEquals("drej til højre ad Kurfürstendamm", Lang.DA.strings.turn(1, false, "Kurfürstendamm"))
     }
+
+    @Test
+    fun bestVoiceIsPreferred() {
+        val score = dk.berlinsightrun.audio.Announcer.Companion::scoreVoice
+        // Højere kvalitet vinder over alt andet
+        assertTrue(score(500, false, false, 300) > score(400, true, false, 100))
+        // Samme kvalitet: rigtigt land og lokal stemme vinder
+        assertTrue(score(400, true, false, 300) > score(400, false, false, 300))
+        assertTrue(score(400, true, false, 300) > score(400, true, true, 300))
+    }
 }

@@ -9,6 +9,7 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import dk.berlinsightrun.i18n.Lang
+import android.speech.tts.Voice
 import java.util.Locale
 
 /**
@@ -43,7 +44,10 @@ class Announcer(
     }.toSet()
 
     init {
-        tts = TextToSpeech(appContext) { status -> main.post { onInit(status) } }
+        // Googles talemotor har neurale stemmer på alle fire sprog og lyder markant bedre end fx
+        // Samsungs eller Xiaomis egne motorer. Den bruges, når den er installeret.
+        val listener = TextToSpeech.OnInitListener { status -> main.post { onInit(status) } }
+        tts = if (isInstalled(GOOGLE_TTS)) TextToSpeech(appContext, listener, GOOGLE_TTS) else TextToSpeech(appContext, listener)
     }
 
     private fun onInit(status: Int) {
@@ -54,7 +58,8 @@ class Announcer(
         }
         applyTtsLanguage(engine)
         engine.setAudioAttributes(focus.attributes)
-        engine.setSpeechRate(1.05f)
+        engine.setSpeechRate(1.0f)
+        engine.setPitch(1.0f)
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {}
             override fun onDone(utteranceId: String?) { main.post { onSegmentDone(utteranceId) } }
@@ -91,7 +96,32 @@ class Announcer(
             engine.setLanguage(Locale.UK)
         } else {
             onTtsProblem(null)
+            bestVoice(engine, lang.locale)?.let { engine.voice = it }
         }
+    }
+
+    private fun isInstalled(pkg: String): Boolean =
+        runCatching { appContext.packageManager.getPackageInfo(pkg, 0); true }.getOrDefault(false)
+
+    companion object {
+        const val GOOGLE_TTS = "com.google.android.tts"
+
+        /**
+         * Vælger den bedste installerede stemme til sproget: højeste kvalitet, rigtigt land
+         * (fx da-DK, en-GB), helst en stemme, der virker uden netforbindelse, og aldrig en
+         * stemme, der ikke er hentet ned endnu.
+         */
+        fun bestVoice(engine: TextToSpeech, locale: Locale): Voice? {
+            val voices = runCatching { engine.voices }.getOrNull() ?: return null
+            return voices
+                .filter { it.locale.language == locale.language }
+                .filterNot { TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED in it.features }
+                .maxByOrNull { scoreVoice(it.quality, it.locale.country == locale.country, it.isNetworkConnectionRequired, it.latency) }
+        }
+
+        /** Ren funktion, så valget kan unit-testes. */
+        fun scoreVoice(quality: Int, countryMatches: Boolean, needsNetwork: Boolean, latency: Int): Int =
+            quality * 10 + (if (countryMatches) 300 else 0) + (if (needsNetwork) -150 else 0) - latency
     }
 
     fun enqueue(a: Announcement) {

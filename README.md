@@ -76,7 +76,7 @@ Appen kører videre med slukket skærm. På nogle telefoner (Samsung, Xiaomi, Hu
 
 ## Stemmer
 
-Appen bruger telefonens tekst-til-tale. Mangler stemmen for det valgte sprog, skriver appen det på forsiden. Installér den under *Indstillinger › Tilgængelighed › Tekst-til-tale › Installér stemmedata*.
+Appen bruger telefonens tekst-til-tale. Er Googles talemotor (Speech Services by Google) installeret, bruger appen den i stedet for telefonens egen, fordi den har neurale stemmer på alle fire sprog. Appen vælger selv den bedste installerede stemme: højeste kvalitet, rigtigt land (da-DK, de-DE, en-GB, fr-FR) og helst en, der virker uden net. Hent stemmerne på forhånd under *Indstillinger › Tekst-til-tale › Speech Services by Google › Installér stemmedata*. Mangler stemmen for det valgte sprog, skriver appen det på forsiden. Installér den under *Indstillinger › Tilgængelighed › Tekst-til-tale › Installér stemmedata*.
 
 Indspillede fortællinger kan lægges i `app/src/main/assets/audio/<sprog>/` som `01.ogg` … `20.ogg`, fx `audio/de/07.ogg` for Kaiser-Wilhelm-Gedächtniskirche på tysk. Så bruges de i stedet for den syntetiske stemme.
 
