@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="navy_900">#FF0A1A33</color>
+    <color name="navy_700">#FF13294B</color>
+    <color name="berlin_blue">#FF2F6FDB</color>
+    <color name="sightrun_lime">#FFB5E61D</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
