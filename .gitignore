@@ -4,3 +4,8 @@ app/build/
 local.properties
 .idea/
 *.iml
+
+# Xcode
+ios/**/xcuserdata/
+ios/**/*.xcuserstate
+DerivedData/

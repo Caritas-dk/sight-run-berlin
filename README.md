@@ -42,6 +42,28 @@ Ruten har to vendepunkter: på Kurfürstendamm ved Joachim-Friedrich-Straße (km
 | 19 | Berliner Dom | 19,2 |
 | 20 | Brandenburger Tor | 20,7 |
 
+## iOS-app
+
+Mappen `ios/` er en komplet iPhone-app i SwiftUI med samme rute, fortællinger, regler og skærme som Android-appen.
+
+1. Installér **Xcode 16** eller nyere på en Mac.
+2. Åbn `ios/BerlinSightrun.xcodeproj` i Xcode.
+3. Vælg en iPhone-simulator, og tryk ▶. Demo-løbet virker i simulatoren.
+4. Til en rigtig iPhone: vælg dit udviklerteam under *Signing & Capabilities* (et gratis Apple-id er nok), slut telefonen til, og tryk ▶.
+
+Testene af rutemotoren kører med ⌘U. De er de samme som Android-appens.
+
+Appen kræver iOS 17. Den bruger GPS og tale i baggrunden, så løbet fortsætter med slukket skærm, og den dæmper musik fra andre apps, mens den taler. Den vælger selv den bedste stemme på iPhonen (premium før forbedret før standard). Har telefonen kun en standardstemme på sproget, viser forsiden, hvor en bedre hentes: *Indstillinger › Tilgængelighed › Oplæst indhold › Stemmer*.
+
+Indspillede fortællinger lægges i `ios/BerlinSightrun/Resources/` som `<sprog>_<nr>.m4a`, fx `de_07.m4a`. iOS kan ikke afspille .ogg.
+
+Ruten og de faste tekster deles med Android:
+
+- `ios/BerlinSightrun/Resources/berlin_sightrun.json` skal være identisk med `app/src/main/assets/route/berlin_sightrun.json`.
+- `ios/BerlinSightrun/I18n/UIStrings.swift` genereres fra Androids `Strings.kt` med `python3 ios/tools/gen_strings.py`.
+
+GitHub Actions tjekker begge dele og bygger og tester iOS-appen ved hvert push.
+
 ## Simulator i browseren
 
 `simulator/index.html` er en simulator af appen i telefonformat, som den til Paris Sightrun. Åbn filen i en browser, helst Microsoft Edge eller Safari, som har de bedste stemmer. Den bruger samme rute, samme fortællinger og samme regler som appen. Ændrer du `assets/route/berlin_sightrun.json`, skal ruten og teksterne i simulatoren opdateres tilsvarende (konstanterne `WP`, `POIS` og `FINISH`).
