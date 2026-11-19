@@ -66,8 +66,8 @@ class Announcement(
         Announcement(kind, currentLang, null, poi, force = true, onDone = null, localize = localize)
 
     companion object {
-        /** Deler ikke efter dag-tal som "17. Juni" eller "9. november". */
-        private val SENTENCE = Regex("(?<=[.!?])(?<!\\b\\d{1,2}\\.)\\s+(?=[A-ZÆØÅÉÀÂÇÈÊÎÔÛÄÖÜ0-9])")
+        /** Deler ikke foran et månedsnavn, så "Straße des 17. Juni" forbliver én sætning. */
+        private val SENTENCE = Regex("(?<=[.!?])\\s+(?=[A-ZÆØÅÉÀÂÇÈÊÎÔÛÄÖÜ0-9])(?!(?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\\b)")
         fun splitSentences(text: String): List<String> =
             text.split(SENTENCE).map { it.trim() }.filter { it.isNotEmpty() }
     }

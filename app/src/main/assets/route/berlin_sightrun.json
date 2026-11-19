@@ -418,7 +418,7 @@
    "km": 0.05,
    "lat": 52.5125,
    "lon": 13.3265,
-   "radiusM": 80,
+   "radiusM": 110,
    "audio": "audio/{lang}/01.ogg",
    "text": {
     "da": "Du starter ved Technische Universität Berlin. Skolen blev grundlagt i 1879 som Den Kongelige Tekniske Højskole i Charlottenburg, og i 1946 genåbnede den som Tysklands første universitet med navnet Technische Universität. I dag læser over 30.000 studerende her. En af de mest kendte er Konrad Zuse, der byggede Z3 i 1941, verdens første fungerende programmerbare computer. Gaden hedder Straße des 17. Juni efter folkeopstanden i Østtyskland i 1953. Nu løber du mod vest. God tur.",

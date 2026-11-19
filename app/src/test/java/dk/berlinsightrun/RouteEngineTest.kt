@@ -65,7 +65,8 @@ class RouteEngineTest {
         while (m < 3_000.0) { engine.onRoutePosition(m, 0); m += 3.0 }
         val schloss = said.first { it.poi?.n == 3 }
         assertEquals(route.pois.first { it.n == 3 }.text("fr"), schloss.text)
-        assertTrue(said.filter { it.kind == Kind.TURN }.last().text.contains("tournez"))
+        val lastTurn = said.last { it.kind == Kind.TURN }
+        assertTrue("Sidste sving: ${lastTurn.text}", lastTurn.text.contains("tournez"))
     }
 
     @Test
