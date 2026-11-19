@@ -42,10 +42,14 @@ Ruten har to vendepunkter: på Kurfürstendamm ved Joachim-Friedrich-Straße (km
 | 19 | Berliner Dom | 19,2 |
 | 20 | Brandenburger Tor | 20,7 |
 
+## Simulator i browseren
+
+`simulator/index.html` er en simulator af appen i telefonformat, som den til Paris Sightrun. Åbn filen i en browser, helst Microsoft Edge eller Safari, som har de bedste stemmer. Den bruger samme rute, samme fortællinger og samme regler som appen. Ændrer du `assets/route/berlin_sightrun.json`, skal ruten og teksterne i simulatoren opdateres tilsvarende (konstanterne `WP`, `POIS` og `FINISH`).
+
 ## Byg og installér
 
 1. Installér **Android Studio** (Ladybug eller nyere).
-2. Åbn mappen `sightrunberlin` med *File › Open*. Android Studio henter Gradle og afhængigheder første gang. Det tager et par minutter.
+2. Åbn mappen `sight-run-berlin` med *File › Open*. Android Studio henter Gradle og afhængigheder første gang. Det tager et par minutter.
 3. Slut en Android-telefon til med USB, og slå *USB-fejlfinding* til under *Indstillinger › Udviklerindstillinger*.
 4. Tryk ▶ *Run 'app'*. Appen installeres og åbner.
 

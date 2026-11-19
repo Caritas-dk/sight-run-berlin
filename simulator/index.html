@@ -1,0 +1,1010 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Berlin Sightrun Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: the app runs inside a phone frame on the left; the simulator's controls and event log sit beside it (stacked on phones). One committed navy look. */
+:root{
+  --navy-900:#0A1A33; --navy-800:#0E2140; --navy-700:#13294B; --navy-600:#1A3560;
+  --blue:#2F6FDB; --blue-text:#8DB2F2; --lime:#B5E61D; --lime-soft:#D4F56A;
+  --white:#FFFFFF; --muted:rgba(255,255,255,.72); --faint:rgba(255,255,255,.14);
+  --warn:#FFB547; --red:#FF5A5F; --green:#22C55E;
+  --font:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:#06101F;color:var(--white);font-family:var(--font);font-size:14px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin-bottom:20px}
+.top h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.3px;text-wrap:balance}
+.top h1 span{color:var(--lime)}
+.top p{margin:0;color:var(--muted);max-width:60ch}
+.grid{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.phone-col{flex:0 0 auto;width:min(390px,100%);margin-inline:auto}
+.panel-col{flex:999 1 420px;min-width:0;display:flex;flex-direction:column;gap:16px}
+
+/* Phone */
+.phone{width:100%;height:800px;border-radius:44px;background:var(--navy-900);border:10px solid #1C2433;box-shadow:0 0 0 1px #2B3446;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column}
+.app-head{display:flex;align-items:center;gap:12px;padding:22px 20px 12px}
+.logo{width:38px;height:38px;border-radius:19px;background:var(--navy-700);display:grid;place-items:center;flex:0 0 auto}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.brand b span{color:var(--lime)}
+.brand small{font-size:12px;color:var(--muted)}
+.mapbox{margin:0 14px;border-radius:20px;overflow:hidden;background:#102342;flex:0 0 auto}
+.mapbox svg{display:block;width:100%;height:auto}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 14px 0}
+.tile{background:var(--navy-700);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column}
+.tile b{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.tile small{font-size:11.5px;color:var(--muted)}
+.lime{color:var(--lime)}
+.langrow{display:flex;gap:6px;padding:0 20px 10px}
+.lang{height:32px;min-width:44px;padding:0 10px;border-radius:16px;border:1px solid var(--navy-600);background:transparent;color:var(--muted);font-family:var(--font);font-weight:700;font-size:12.5px;cursor:pointer}
+.lang[aria-pressed="true"]{background:var(--lime);border-color:var(--lime);color:var(--navy-900)}
+.lang:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+.listhead{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 8px}
+.listhead h2{margin:0;font-size:16px;font-weight:700}
+.listhead small{color:var(--muted);font-size:12px}
+.poilist{list-style:none;margin:0;padding:0 14px;flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.poilist li{display:flex;align-items:center;gap:12px;background:var(--navy-700);border-radius:13px;padding:9px 12px;min-height:44px}
+.num{width:26px;height:26px;border-radius:13px;background:var(--blue);display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.poilist li.done .num{background:var(--lime);color:var(--navy-900)}
+.poilist li span.n{flex:1 1 auto;font-weight:600;font-size:13.5px;min-width:0}
+.poilist li span.k{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cta-wrap{padding:12px 14px 20px}
+.cta{width:100%;height:58px;border-radius:29px;border:0;background:var(--lime);color:var(--navy-900);font-family:var(--font);font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.cta:hover{background:var(--lime-soft)}
+.cta:focus-visible,.btn:focus-visible,.seg button:focus-visible,.round:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+
+/* Run screen */
+.runmap{position:absolute;inset:0 0 auto 0;height:470px;background:#102342}
+.runmap svg{display:block;width:100%;height:100%}
+.turn{position:absolute;left:14px;right:14px;top:18px;background:var(--lime);color:var(--navy-900);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:transform .2s}
+.turn.flash{transform:scale(1.03)}
+.turn .ic{width:50px;height:50px;border-radius:14px;background:var(--navy-900);display:grid;place-items:center;flex:0 0 auto}
+.turn .ic svg{transition:transform .2s}
+.turn b{display:block;font-size:24px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.turn span{display:block;font-size:14px;font-weight:600}
+.turn.off{background:var(--warn)}
+.narr{position:absolute;left:14px;right:14px;top:330px;background:var(--navy-700);border:1px solid var(--blue);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.narr .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.6px;color:var(--lime);text-transform:uppercase}
+.chip{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--navy-900);border-radius:10px;padding:3px 8px;white-space:nowrap}
+.chip.on{color:var(--navy-900);background:var(--lime)}
+.narr h3{margin:0;font-size:19px;font-weight:800}
+.narr p{margin:0;font-size:13px;color:var(--muted);max-height:38px;overflow:hidden}
+.bar{height:6px;border-radius:3px;background:var(--navy-900);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--lime);transition:width .3s}
+.runbottom{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);border-radius:26px 26px 0 0;padding:16px 14px 18px;display:flex;flex-direction:column;gap:12px}
+.kmcard{position:absolute;left:14px;right:14px;top:112px;background:var(--navy-700);border:1.5px solid var(--lime);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.kmcard .vals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.kmcard b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.kmcard small{font-size:11.5px;color:var(--muted)}
+.lastkm{text-align:center;font-size:13px;font-weight:700;color:var(--lime);font-variant-numeric:tabular-nums}
+.splits{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.splits h4{margin:0 0 4px;font-size:15px}
+.split{display:grid;grid-template-columns:22px minmax(0,1fr) 116px;gap:8px;align-items:center;font-size:12.5px;font-variant-numeric:tabular-nums}
+.split .bar2{height:12px;border-radius:4px;background:var(--blue)}
+.split.best .bar2{background:var(--lime)}
+.split.best .v{color:var(--lime)}
+.split .k{color:var(--muted)}
+.startind{position:absolute;left:14px;right:14px;top:112px;background:var(--navy-700);border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:14px;border:1.5px solid var(--red)}
+.startind.ok{border-color:var(--green)}
+.startind svg{flex:0 0 auto}
+.startind b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.startind span{font-size:13px;color:var(--muted)}
+.big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center}
+.big3 b{display:block;font-size:30px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.big3 small{font-size:11.5px;color:var(--muted)}
+.prog{height:6px;border-radius:3px;background:var(--navy-700);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--blue)}
+.next{text-align:center;font-size:13px;color:var(--muted)}
+.next b{color:var(--white)}
+.ctrls{display:flex;justify-content:space-between;align-items:center;padding:0 24px}
+.round{width:52px;height:52px;border-radius:26px;border:0;background:var(--navy-700);display:grid;place-items:center;cursor:pointer}
+.round.main{width:70px;height:70px;border-radius:35px;background:var(--lime)}
+
+/* Summary */
+.sum{padding:26px 18px 20px;display:flex;flex-direction:column;gap:14px;height:100%}
+.sum .t{font-size:52px;font-weight:800;letter-spacing:-1.5px;line-height:1;font-variant-numeric:tabular-nums}
+
+/* Panel */
+.card{background:var(--navy-800);border:1px solid var(--navy-600);border-radius:18px;padding:18px}
+.card h2{margin:0 0 12px;font-size:15px;font-weight:700}
+.controls{display:flex;flex-direction:column;gap:16px}
+.rowc{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.btn{height:46px;padding:0 20px;border-radius:23px;border:1px solid var(--navy-600);background:var(--navy-700);color:var(--white);font-family:var(--font);font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--lime);color:var(--navy-900);border-color:var(--lime)}
+.btn.primary:hover{background:var(--lime-soft)}
+.btn.warn{border-color:var(--warn);color:var(--warn);background:transparent}
+.lbl{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;min-width:92px}
+.seg{display:inline-flex;background:var(--navy-900);border-radius:12px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{height:36px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-family:var(--font);font-weight:700;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:var(--white)}
+input[type=range]{accent-color:#B5E61D;flex:1 1 200px;min-width:0}
+.kmout{font-family:var(--mono);font-size:13px;min-width:70px;font-variant-numeric:tabular-nums}
+label.ck{display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:var(--white)}
+label.ck input{accent-color:#B5E61D;width:18px;height:18px}
+.hint{font-size:12.5px;color:var(--muted)}
+.meter{display:flex;align-items:flex-end;gap:3px;height:28px}
+.meter i{width:6px;background:var(--blue);border-radius:2px;height:20%;transition:height .12s}
+.meter.ducked i{background:var(--muted)}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
+.log li{display:grid;grid-template-columns:62px 92px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 10px;border-radius:10px;background:var(--navy-900)}
+.log .km{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;border-radius:8px;padding:2px 7px;justify-self:start;white-space:nowrap}
+.tag.turn{background:var(--lime);color:var(--navy-900)}
+.tag.narr{background:var(--blue);color:var(--white)}
+.tag.km{background:var(--navy-600);color:var(--white)}
+.tag.off{background:var(--warn);color:var(--navy-900)}
+.tag.sys{background:transparent;border:1px solid var(--navy-600);color:var(--muted)}
+.log .txt{font-size:13px;min-width:0}
+.empty{color:var(--muted);font-size:13px}
+.voicesel{height:44px;flex:1 1 220px;min-width:0;border-radius:12px;border:1px solid var(--navy-600);background:var(--navy-900);color:var(--white);font-family:var(--font);font-size:14px;padding:0 10px}
+.voicesel:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+.voiceinfo{font-size:12.5px;color:var(--muted)}
+.voiceinfo b{color:var(--white)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Berlin <span>Sightrun</span> · simulator</h1>
+    <p>Telefonen til venstre er appen. Vælg sprog, tryk Start løb, og en virtuel løber løber halvmarathonruten. Appen guider ved hvert sving, dæmper musikken og fortæller om seværdighederne på dansk, tysk, engelsk eller fransk.</p>
+  </div>
+
+  <div class="grid">
+    <div class="phone-col">
+      <div class="phone" id="phone">
+        <!-- Overview -->
+        <div class="screen" id="scrOverview">
+          <div class="app-head">
+            <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B5E61D" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 20c3-1 4-4 6-8s4-7 10-8"/><circle cx="20" cy="4" r="1.5" fill="#B5E61D"/><circle cx="4" cy="20" r="1.5" fill="#B5E61D"/></svg></div>
+            <div class="brand"><b>Berlin <span>Sightrun</span></b><small data-t="tagline">Halvmarathon · fra TU Berlin til Brandenburger Tor</small></div>
+          </div>
+          <div class="langrow" role="group" aria-label="Sprog i appen"><button type="button" class="lang" data-lang="da">DA</button><button type="button" class="lang" data-lang="de">DE</button><button type="button" class="lang" data-lang="en">EN</button><button type="button" class="lang" data-lang="fr">FR</button></div>
+          <div class="mapbox"><svg id="mapOverview" viewBox="10 46 740 390" role="img" aria-label="Kort over halvmarathonruten gennem Berlin"></svg></div>
+          <div class="stats3">
+            <div class="tile"><b class="lime" data-t="dist">21,1</b><small data-t="km">kilometer</small></div>
+            <div class="tile"><b>20</b><small data-t="sights">seværdigheder</small></div>
+            <div class="tile"><b>2:05</b><small data-t="eta">t ved 5:55/km</small></div>
+          </div>
+          <div class="listhead"><h2 data-t="list">Seværdigheder på ruten</h2><small>km</small></div>
+          <ol class="poilist" id="poiList"></ol>
+          <div class="cta-wrap"><button class="cta" id="ctaStart" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="#0A1A33" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/></svg><span data-t="start">Start løb</span></button></div>
+        </div>
+
+        <!-- Run -->
+        <div class="screen" id="scrRun" hidden>
+          <div class="runmap"><svg id="mapRun" viewBox="0 0 112 133" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Kort der følger løberen"></svg></div>
+          <div class="turn" id="turnCard">
+            <div class="ic"><svg id="turnIcon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B5E61D" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 20V12a4 4 0 0 1 4-4h8"/><path d="M16 4l4 4-4 4"/></svg></div>
+            <div><b id="turnDist">–</b><span id="turnText">Følg ruten</span></div>
+          </div>
+          <div class="startind" id="startInd" hidden role="status">
+            <svg width="58" height="58" viewBox="0 0 58 58" aria-hidden="true"><circle id="siRing" cx="29" cy="29" r="24" fill="none" stroke="#FF5A5F" stroke-width="7"/><circle id="siDot" cx="29" cy="29" r="9" fill="#FF5A5F"/><path id="siCheck" d="M20 30l6 6 12-13" fill="none" stroke="#0A1A33" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0"/></svg>
+            <div><b id="siTitle">–</b><span id="siSub">–</span></div>
+          </div>
+          <div class="kmcard" id="kmCard" hidden>
+            <span class="eyebrow" id="kmEyebrow">Kilometer 1</span>
+            <div class="vals"><div><b id="kmTot">0:00</b><small data-t="time">tid</small></div><div><b class="lime" id="kmSplit">0:00</b><small data-t="lastKm">sidste km</small></div><div><b id="kmAvg">0:00</b><small data-t="avgPaceShort">snit min/km</small></div></div>
+          </div>
+          <div class="narr" id="narrCard" hidden>
+            <div class="row"><span class="eyebrow" id="narrEyebrow">Fortæller nu</span><span class="chip" id="duckChip">Musik dæmpet</span></div>
+            <h3 id="narrTitle">–</h3>
+            <p id="narrLine"></p>
+            <div class="bar"><i id="narrBar"></i></div>
+          </div>
+          <div class="runbottom">
+            <div class="big3">
+              <div><b class="lime" id="vKm">0,0</b><small data-t="kmOf">km af 21,1</small></div>
+              <div><b id="vTime">0:00</b><small data-t="time">tid</small></div>
+              <div><b id="vPace">–:––</b><small data-t="avgPaceShort">snit min/km</small></div>
+            </div>
+            <div class="prog"><i id="vProg"></i></div>
+            <div class="lastkm" id="vLastKm" hidden></div>
+            <div class="next" id="vNext">Næste seværdighed: <b>TU Berlin</b></div>
+            <div class="ctrls">
+              <button class="round" id="btnRepeat" type="button" aria-label="Gentag sidste besked"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+              <button class="round main" id="btnPausePhone" type="button" aria-label="Pause"><svg id="icoPause" width="26" height="26" viewBox="0 0 24 24" fill="#0A1A33" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>
+              <button class="round" id="btnSkip" type="button" aria-label="Spring fortælling over"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="screen" id="scrSum" hidden>
+          <div class="sum">
+            <span class="eyebrow" data-t="done">Halvmarathon gennemført</span>
+            <div><div class="t" id="sumTime">2:04:50</div><div class="hint" data-t="sumSub">21,1 km fra TU Berlin til Brandenburger Tor</div></div>
+            <div class="mapbox" style="margin:0"><svg id="mapSum" viewBox="10 46 740 390" role="img" aria-label="Kort over den løbne rute"></svg></div>
+            <div class="stats3" style="padding:0">
+              <div class="tile"><b class="lime" id="sumPace">5:55</b><small data-t="avgPaceShort">snit min/km</small></div>
+              <div class="tile"><b id="sumHeard">0/20</b><small data-t="sumHeard">fortællinger</small></div>
+              <div class="tile"><b data-t="dist">21,1</b><small>km</small></div>
+            </div>
+            <div class="splits" id="sumSplits"></div>
+            <div><button class="cta" id="ctaAgain" type="button" data-t="toOverview">Til oversigten</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-col">
+      <section class="card controls" aria-labelledby="hCtrl">
+        <h2 id="hCtrl">Styring af simulationen</h2>
+        <div class="rowc">
+          <button class="btn primary" id="btnStart" type="button">Start løb</button>
+          <button class="btn" id="btnPause" type="button" disabled>Pause</button>
+          <button class="btn" id="btnReset" type="button">Nulstil</button>
+          <button class="btn warn" id="btnOff" type="button" disabled>Løb forkert</button>
+        </div>
+        <div class="rowc">
+          <span class="lbl">Sprog</span>
+          <div class="seg" id="langSeg" role="group" aria-label="Sprog">
+            <button type="button" data-lang="da" aria-pressed="true">Dansk</button>
+            <button type="button" data-lang="de" aria-pressed="false">Deutsch</button>
+            <button type="button" data-lang="en" aria-pressed="false">English</button>
+            <button type="button" data-lang="fr" aria-pressed="false">Français</button>
+          </div>
+        </div>
+        <div class="rowc">
+          <span class="lbl">Hastighed</span>
+          <div class="seg" id="speedSeg" role="group" aria-label="Simuleringshastighed">
+            <button type="button" data-v="1" aria-pressed="false">1×</button>
+            <button type="button" data-v="5" aria-pressed="false">5×</button>
+            <button type="button" data-v="20" aria-pressed="true">20×</button>
+            <button type="button" data-v="60" aria-pressed="false">60×</button>
+          </div>
+          <label class="ck"><input type="checkbox" id="ckSlow" checked> Sæt farten ned, mens appen taler</label>
+          <label class="ck"><input type="checkbox" id="ckWalk" checked> Start ca. 440 m fra startpunktet</label>
+        </div>
+        <div class="rowc">
+          <label class="lbl" for="scrub">Hop til</label>
+          <input type="range" id="scrub" min="0" max="21.1" step="0.1" value="0">
+          <span class="kmout" id="scrubOut">0,0 km</span>
+        </div>
+        <div class="rowc">
+          <span class="lbl">Musik</span>
+          <div class="seg" id="musicSeg" role="group" aria-label="Musikkilde">
+            <button type="button" data-v="demo" aria-pressed="true">Demo-beat</button>
+            <button type="button" data-v="file" aria-pressed="false">Egen fil</button>
+            <button type="button" data-v="none" aria-pressed="false">Ingen</button>
+          </div>
+          <div class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <input type="file" id="musicFile" accept="audio/*" hidden>
+        </div>
+        <div class="rowc">
+          <span class="lbl">Tale</span>
+          <label class="ck"><input type="checkbox" id="ckNarr" checked> Fortællinger</label>
+          <label class="ck"><input type="checkbox" id="ckKm" checked> Kilometeropråb</label>
+        </div>
+        <div class="rowc">
+          <label class="lbl" for="voiceSel">Stemme</label>
+          <select id="voiceSel" class="voicesel"></select>
+          <button class="btn" id="btnTestVoice" type="button">Test</button>
+        </div>
+        <div class="voiceinfo" id="voiceInfo">Stemme: finder dansk stemme …</div>
+      </section>
+
+      <section class="card" aria-labelledby="hLog">
+        <h2 id="hLog">Hvad appen siger</h2>
+        <ul class="log" id="log"><li class="empty" style="display:block;background:none;padding:0">Tryk Start løb. Her kommer alle beskeder, appen siger, med km og type.</li></ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+// ---------- Data ----------
+// [name, lat, lon, street for the segment that starts here]
+const WP = [["TU Berlin", 52.51295, 13.3266, "Straße des 17. Juni"],["Ernst-Reuter-Platz", 52.51272, 13.32306, "Otto-Suhr-Allee"],["Luisenplatz", 52.51976, 13.29955, "Spandauer Damm"],["Schloss Charlottenburg", 52.51945, 13.29594, "Schloßstraße"],["Sophie-Charlotte-Platz", 52.51094, 13.29715, "Kaiserdamm"],["Sophie-Charlotten-Straße", 52.51054, 13.28902, "Sophie-Charlotten-Straße"],["Wundtstraße", 52.50946, 13.28934, "Wundtstraße"],["Lietzensee", 52.50894, 13.28771, "Wundtstraße"],["Lietzensee Süd", 52.50821, 13.28623, "Wundtstraße"],["Wundtstraße Süd", 52.50747, 13.2854, "Wundtstraße"],["Neue Kantstraße", 52.5066, 13.2854, "Neue Kantstraße"],["Amtsgerichtsplatz", 52.50698, 13.295, "Kantstraße"],["Windscheidstraße", 52.5068, 13.299, "Windscheidstraße"],["Droysenstraße", 52.50329, 13.30072, "Droysenstraße"],["Kurfürstendamm West", 52.49888, 13.3002, "Kurfürstendamm"],["Vendepunkt Kurfürstendamm", 52.4976, 13.29335, "Kurfürstendamm"],["Adenauerplatz", 52.4999, 13.30694, "Kurfürstendamm"],["Olivaer Platz", 52.50027, 13.31202, "Kurfürstendamm"],["Uhlandstraße", 52.50228, 13.32509, "Kurfürstendamm"],["Breitscheidplatz Vest", 52.50434, 13.33473, "Kurfürstendamm"],["Breitscheidplatz", 52.50418, 13.33607, "Tauentzienstraße"],["Tauentzienstraße", 52.50392, 13.33682, "Tauentzienstraße"],["Wittenbergplatz", 52.5015, 13.34285, "Wittenbergplatz"],["Kleiststraße", 52.50141, 13.34395, "Kleiststraße"],["Kleiststraße Ost", 52.49998, 13.35103, "Kleiststraße"],["Nollendorfplatz", 52.49911, 13.35381, "Nollendorfplatz"],["Bülowstraße", 52.49905, 13.35512, "Bülowstraße"],["Potsdamer Straße", 52.49778, 13.36192, "Potsdamer Straße"],["Potsdamer Straße Nord", 52.49991, 13.3627, "Potsdamer Straße"],["Pallasstraße", 52.50069, 13.36334, "Potsdamer Straße"],["Kurfürstenstraße", 52.5027, 13.3653, "Potsdamer Straße"],["Potsdamer Brücke", 52.50506, 13.36796, "Potsdamer Straße"],["Neue Nationalgalerie", 52.50636, 13.36894, "Potsdamer Straße"],["Staatsbibliothek", 52.5083, 13.36991, "Potsdamer Straße"],["Kulturforum", 52.50884, 13.37091, "Potsdamer Straße"],["Potsdamer Platz", 52.50936, 13.37742, "Leipziger Platz"],["Leipziger Platz", 52.50965, 13.37951, "Leipziger Straße"],["Wilhelmstraße", 52.50996, 13.38418, "Wilhelmstraße"],["Wilhelmstraße Süd", 52.50784, 13.38529, "Wilhelmstraße"],["Zimmerstraße", 52.50635, 13.3863, "Zimmerstraße"],["Zimmerstraße Ost", 52.50653, 13.38769, "Zimmerstraße"],["Checkpoint Charlie", 52.50664, 13.39046, "Friedrichstraße"],["Friedrichstraße/Leipziger Straße", 52.51024, 13.39005, "Leipziger Straße"],["Markgrafenstraße", 52.5105, 13.3938, "Markgrafenstraße"],["Gendarmenmarkt", 52.51233, 13.39346, "Markgrafenstraße"],["Französische Straße", 52.51491, 13.39304, "Französische Straße"],["Werderscher Markt", 52.51531, 13.39789, "Werderscher Markt"],["Schleusenbrücke", 52.51615, 13.4008, "Schlossplatz"],["Schlossplatz", 52.5164, 13.4024, "Rathausbrücke"],["Rathausbrücke", 52.5168, 13.4042, "Rathausstraße"],["Rotes Rathaus", 52.519, 13.4084, "Rathausstraße"],["Alexanderplatz Süd", 52.5208, 13.412, "Alexanderplatz"],["Alexanderplatz", 52.5216, 13.4133, "Karl-Marx-Allee"],["Karl-Marx-Allee", 52.5214, 13.4165, "Karl-Marx-Allee"],["Vendepunkt Karl-Marx-Allee", 52.52072, 13.41979, "Karl-Marx-Allee"],["Karl-Marx-Allee Vest", 52.52144, 13.4164, "Alexanderplatz"],["Alexanderplatz Nord", 52.5229, 13.4112, "Karl-Liebknecht-Straße"],["Marienkirche", 52.5216, 13.4066, "Karl-Liebknecht-Straße"],["Liebknechtbrücke", 52.5194, 13.4027, "Karl-Liebknecht-Straße"],["Berliner Dom", 52.5184, 13.401, "Karl-Liebknecht-Straße"],["Schlossbrücke", 52.5174, 13.3988, "Unter den Linden"],["Staatsoper", 52.51715, 13.395, "Unter den Linden"],["Friedrichstraße", 52.5169, 13.3888, "Unter den Linden"],["Glinkastraße", 52.51668, 13.38581, "Unter den Linden"],["Pariser Platz", 52.51632, 13.379, "Pariser Platz"],["Brandenburger Tor", 52.51625, 13.3777, "Straße des 17. Juni"],["Mål", 52.51603, 13.37452, ""]];
+
+const POIS = [{"n": 1, "name": {"da": "TU Berlin", "de": "TU Berlin", "en": "TU Berlin", "fr": "TU Berlin"}, "km": 0.05, "lat": 52.5125, "lon": 13.3265, "r": 80, "text": {"da": "Du starter ved Technische Universität Berlin. Skolen blev grundlagt i 1879 som Den Kongelige Tekniske Højskole i Charlottenburg, og i 1946 genåbnede den som Tysklands første universitet med navnet Technische Universität. I dag læser over 30.000 studerende her. En af de mest kendte er Konrad Zuse, der byggede Z3 i 1941, verdens første fungerende programmerbare computer. Gaden hedder Straße des 17. Juni efter folkeopstanden i Østtyskland i 1953. Nu løber du mod vest. God tur.", "de": "Du startest an der Technischen Universität Berlin. Gegründet wurde sie 1879 als Königliche Technische Hochschule zu Charlottenburg, und 1946 wurde sie als erste deutsche Hochschule mit dem Namen Technische Universität neu eröffnet. Heute studieren hier über 30.000 Menschen. Einer der bekanntesten Absolventen ist Konrad Zuse, der 1941 die Z3 baute, den ersten funktionsfähigen programmierbaren Computer der Welt. Die Straße heißt Straße des 17. Juni, nach dem Volksaufstand in der DDR 1953. Jetzt läufst du nach Westen. Viel Spaß.", "en": "You start at the Technical University of Berlin. It was founded in 1879 as the Royal Technical College of Charlottenburg, and in 1946 it reopened as the first university in Germany to carry the name Technische Universität. Today more than 30,000 students study here. One of its best-known graduates is Konrad Zuse, who built the Z3 in 1941, the world's first working programmable computer. The street is named Straße des 17. Juni after the uprising in East Germany in 1953. Now you run west. Enjoy the run.", "fr": "Vous partez de l'Université technique de Berlin. Fondée en 1879 sous le nom d'École royale technique de Charlottenbourg, elle a rouvert en 1946 comme la première université allemande à porter le nom de Technische Universität. Plus de 30 000 étudiants y suivent aujourd'hui leurs cours. L'un de ses anciens élèves les plus célèbres est Konrad Zuse, qui a construit en 1941 le Z3, le premier ordinateur programmable en état de marche. La rue porte le nom du soulèvement de juin 1953 en Allemagne de l'Est. Vous courez maintenant vers l'ouest. Bonne course."}}, {"n": 2, "name": {"da": "Ernst-Reuter-Platz", "de": "Ernst-Reuter-Platz", "en": "Ernst-Reuter-Platz", "fr": "Ernst-Reuter-Platz"}, "km": 0.29, "lat": 52.5127, "lon": 13.3222, "r": 80, "text": {"da": "Du løber ind på Ernst-Reuter-Platz, en af Berlins største rundkørsler. Pladsen hed tidligere Am Knie, knæet, men fik i 1953 navn efter Ernst Reuter, Vestberlins borgmester under blokaden i 1948 og 1949. Foran Rigsdagen bad han verdens folk om at se på denne by, og talen blev et symbol på Vestberlins vilje til at klare sig. I 1950'erne og 60'erne blev pladsen udstillingsvindue for det moderne Vestberlin med højhuse rundt om. Det høje Telefunken-hus fra 1960 hører i dag til universitetet.", "de": "Du läufst auf den Ernst-Reuter-Platz, einen der größten Kreisverkehre Berlins. Früher hieß der Platz Am Knie, doch 1953 wurde er nach Ernst Reuter benannt, dem Regierenden Bürgermeister West-Berlins während der Blockade 1948 und 1949. Vor dem Reichstag rief er die Völker der Welt auf, auf diese Stadt zu schauen, und die Rede wurde zum Symbol des Durchhaltewillens. In den Fünfziger- und Sechzigerjahren wurde der Platz mit seinen Hochhäusern zum Schaufenster des modernen West-Berlin. Das Telefunken-Hochhaus von 1960 gehört heute zur Universität.", "en": "You are running onto Ernst-Reuter-Platz, one of Berlin's largest roundabouts. It used to be called Am Knie, the knee, but in 1953 it was named after Ernst Reuter, mayor of West Berlin during the blockade of 1948 and 1949. In front of the Reichstag he asked the peoples of the world to look upon this city, and the speech became a symbol of West Berlin's will to hold out. In the fifties and sixties the square, ringed by tower blocks, became a showcase of modern West Berlin. The tall Telefunken building from 1960 now belongs to the university.", "fr": "Vous arrivez sur l'Ernst-Reuter-Platz, l'un des plus grands ronds-points de Berlin. La place s'appelait autrefois Am Knie, le genou, avant de prendre en 1953 le nom d'Ernst Reuter, maire de Berlin-Ouest pendant le blocus de 1948 et 1949. Devant le Reichstag, il avait appelé les peuples du monde à regarder cette ville, et ce discours est devenu le symbole de la résistance de Berlin-Ouest. Dans les années cinquante et soixante, la place entourée de tours est devenue la vitrine du Berlin-Ouest moderne. La tour Telefunken de 1960 appartient aujourd'hui à l'université."}}, {"n": 3, "name": {"da": "Schloss Charlottenburg", "de": "Schloss Charlottenburg", "en": "Charlottenburg Palace", "fr": "Château de Charlottenbourg"}, "km": 2.26, "lat": 52.5206, "lon": 13.2957, "r": 160, "text": {"da": "Til højre ligger Schloss Charlottenburg, Berlins største slot. Det blev påbegyndt i 1695 som sommerresidens for Sophie Charlotte, hustru til kurfyrst Frederik den Tredje, der i 1701 kronede sig selv som Preussens første konge. Slottet hed først Lietzenburg, men fik navn efter dronningen, da hun døde i 1705. Øverst på kuplen drejer gudinden Fortuna med vinden. Slottet blev hårdt ramt af bomber i 1943 og er genopbygget siden. Bag det ligger en stor barokhave. Nu drejer du til venstre ned ad Schloßstraße.", "de": "Rechts liegt Schloss Charlottenburg, das größte Schloss Berlins. Der Bau begann 1695 als Sommerresidenz für Sophie Charlotte, die Frau von Kurfürst Friedrich dem Dritten, der sich 1701 zum ersten König in Preußen krönte. Zunächst hieß das Schloss Lietzenburg, nach dem Tod der Königin 1705 bekam es ihren Namen. Oben auf der Kuppel dreht sich die Glücksgöttin Fortuna mit dem Wind. 1943 wurde das Schloss schwer zerstört und danach wieder aufgebaut. Dahinter liegt ein großer Barockgarten. Jetzt geht es links in die Schloßstraße.", "en": "On your right is Charlottenburg Palace, the largest palace in Berlin. Work began in 1695 on a summer residence for Sophie Charlotte, wife of Elector Frederick the Third, who in 1701 crowned himself the first King in Prussia. It was first called Lietzenburg and took the queen's name after she died in 1705. On top of the dome, the goddess Fortuna turns with the wind. Bombs badly damaged the palace in 1943, and it has been rebuilt since. Behind it lies a large baroque garden. Now you turn left down Schloßstraße.", "fr": "Sur votre droite se dresse le château de Charlottenbourg, le plus grand palais de Berlin. Sa construction a commencé en 1695 pour servir de résidence d'été à Sophie-Charlotte, épouse du prince électeur Frédéric III, qui s'est couronné en 1701 premier roi en Prusse. Appelé d'abord Lietzenburg, le château a pris le nom de la reine à sa mort en 1705. Au sommet du dôme, la déesse Fortuna tourne avec le vent. Gravement touché par les bombes en 1943, il a été reconstruit depuis. Derrière s'étend un grand jardin baroque. Vous tournez maintenant à gauche dans la Schloßstraße."}}, {"n": 4, "name": {"da": "Schaubühne", "de": "Schaubühne", "en": "Schaubühne", "fr": "Schaubühne"}, "km": 7.29, "lat": 52.4983, "lon": 13.303, "r": 130, "text": {"da": "Ved Lehniner Platz ligger Schaubühne, et af Europas mest kendte teatre. Det blev grundlagt i 1962 i Kreuzberg, og fra 1970 gjorde instruktøren Peter Stein det berømt i hele verden. I 1981 flyttede teatret hertil, ind i den gamle biograf Universum, som arkitekten Erich Mendelsohn tegnede i 1928. Læg mærke til den runde, strømlinede facade. Den var dengang et af de mest moderne huse i byen. Siden årtusindskiftet har Thomas Ostermeier ledet teatret, og forestillingerne turnerer over hele kloden.", "de": "Am Lehniner Platz steht die Schaubühne, eines der bekanntesten Theater Europas. Gegründet wurde sie 1962 in Kreuzberg, und ab 1970 machte der Regisseur Peter Stein sie weltberühmt. 1981 zog das Theater hierher, in das ehemalige Kino Universum, das der Architekt Erich Mendelsohn 1928 entworfen hatte. Achte auf die runde, stromlinienförmige Fassade. Sie war damals einer der modernsten Bauten der Stadt. Seit der Jahrtausendwende leitet Thomas Ostermeier das Haus, und seine Inszenierungen touren um die ganze Welt.", "en": "At Lehniner Platz stands the Schaubühne, one of the best-known theatres in Europe. It was founded in 1962 in Kreuzberg, and from 1970 the director Peter Stein made it famous around the world. In 1981 the company moved here, into the former Universum cinema designed by the architect Erich Mendelsohn in 1928. Look at the rounded, streamlined facade. Back then it was one of the most modern buildings in the city. Since the turn of the millennium Thomas Ostermeier has led the theatre, and its productions tour the whole globe.", "fr": "Sur la Lehniner Platz se trouve la Schaubühne, l'un des théâtres les plus célèbres d'Europe. Fondée en 1962 à Kreuzberg, elle a acquis une renommée mondiale à partir de 1970 grâce au metteur en scène Peter Stein. En 1981, la troupe s'est installée ici, dans l'ancien cinéma Universum dessiné en 1928 par l'architecte Erich Mendelsohn. Regardez sa façade arrondie et profilée. C'était alors l'un des bâtiments les plus modernes de la ville. Depuis le tournant du millénaire, Thomas Ostermeier dirige le théâtre, et ses spectacles tournent dans le monde entier."}}, {"n": 5, "name": {"da": "Kurfürstendamm", "de": "Kurfürstendamm", "en": "Kurfürstendamm", "fr": "Kurfürstendamm"}, "km": 8.36, "lat": 52.5012, "lon": 13.318, "r": 80, "text": {"da": "Du løber på Kurfürstendamm, som berlinerne bare kalder Ku'damm. Allerede i 1500-tallet var her en ridesti, som kurfyrsterne brugte på vej fra slottet i byen til jagtslottet i Grunewald. I 1880'erne fik Bismarck den udbygget til en bred boulevard efter forbillede fra Champs-Élysées i Paris. Gaden er 53 meter bred og godt tre og en halv kilometer lang. Under den kolde krig var Ku'damm Vestberlins udstillingsvindue med biografer, caféer og butikker, og den er stadig byens mest kendte shoppinggade.", "de": "Du läufst auf dem Kurfürstendamm, den die Berliner einfach Ku'damm nennen. Schon im 16. Jahrhundert verlief hier ein Reitweg, auf dem die Kurfürsten vom Stadtschloss zum Jagdschloss Grunewald ritten. In den 1880er-Jahren ließ Bismarck ihn nach dem Vorbild der Champs-Élysées in Paris zu einem Prachtboulevard ausbauen. Die Straße ist 53 Meter breit und gut dreieinhalb Kilometer lang. Im Kalten Krieg war der Ku'damm das Schaufenster West-Berlins mit Kinos, Cafés und Geschäften, und er ist bis heute die bekannteste Einkaufsstraße der Stadt.", "en": "You are running along the Kurfürstendamm, which Berliners simply call the Ku'damm. As early as the sixteenth century there was a bridle path here, used by the electors to ride from the city palace to their hunting lodge in the Grunewald forest. In the 1880s Bismarck had it widened into a grand boulevard modelled on the Champs-Élysées in Paris. The street is 53 metres wide and about three and a half kilometres long. During the Cold War the Ku'damm was West Berlin's shop window, full of cinemas, cafés and stores, and it is still the city's best-known shopping street.", "fr": "Vous courez sur le Kurfürstendamm, que les Berlinois appellent simplement le Ku'damm. Dès le seizième siècle, un chemin cavalier passait ici, emprunté par les princes électeurs entre le château de la ville et leur pavillon de chasse du Grunewald. Dans les années 1880, Bismarck l'a fait transformer en grand boulevard sur le modèle des Champs-Élysées. L'avenue mesure 53 mètres de large et environ trois kilomètres et demi de long. Pendant la guerre froide, le Ku'damm était la vitrine de Berlin-Ouest, avec ses cinémas, ses cafés et ses boutiques, et il reste la rue commerçante la plus célèbre de la ville."}}, {"n": 6, "name": {"da": "Café Kranzler", "de": "Café Kranzler", "en": "Café Kranzler", "fr": "Café Kranzler"}, "km": 9.33, "lat": 52.5036, "lon": 13.3317, "r": 80, "text": {"da": "På hjørnet af Joachimsthaler Straße ser du den runde pavillon med rød- og hvidstribet markise. Det er Café Kranzler. Caféen blev grundlagt i 1825 af den østrigske konditor Johann Georg Kranzler på Unter den Linden, men efter krigen lå den gamle adresse i Østberlin. Derfor genopstod Kranzler her på Ku'damm, og rotunden fra 1958 blev et symbol på det nye Vestberlin, hvor man så og blev set. Bag den rejser sig Neues Kranzler Eck, et glashøjhus fra år 2000 tegnet af Helmut Jahn.", "de": "An der Ecke Joachimsthaler Straße siehst du den runden Pavillon mit der rot-weiß gestreiften Markise. Das ist das Café Kranzler. Der österreichische Konditor Johann Georg Kranzler gründete es 1825 Unter den Linden, doch nach dem Krieg lag die alte Adresse im Ostteil der Stadt. Deshalb entstand das Kranzler hier am Ku'damm neu, und die Rotunde von 1958 wurde zum Symbol des neuen West-Berlin, wo man sehen und gesehen werden wollte. Dahinter ragt das Neue Kranzler Eck auf, ein gläsernes Hochhaus von Helmut Jahn aus dem Jahr 2000.", "en": "On the corner of Joachimsthaler Straße you can see the round pavilion with a red and white striped awning. That is Café Kranzler. The Austrian confectioner Johann Georg Kranzler founded it in 1825 on Unter den Linden, but after the war the old address lay in East Berlin. So Kranzler was reborn here on the Ku'damm, and the rotunda from 1958 became a symbol of the new West Berlin, a place to see and be seen. Behind it rises the Neues Kranzler Eck, a glass tower designed by Helmut Jahn and completed in 2000.", "fr": "À l'angle de la Joachimsthaler Straße, vous voyez un pavillon rond coiffé d'un auvent rayé rouge et blanc. C'est le Café Kranzler. Le pâtissier autrichien Johann Georg Kranzler l'avait fondé en 1825 sur Unter den Linden, mais après la guerre l'ancienne adresse se trouvait à Berlin-Est. Le Kranzler a donc rouvert ici, sur le Ku'damm, et sa rotonde de 1958 est devenue le symbole du nouveau Berlin-Ouest, où l'on venait voir et être vu. Derrière s'élève le Neues Kranzler Eck, une tour de verre de Helmut Jahn achevée en 2000."}}, {"n": 7, "name": {"da": "Kaiser-Wilhelm-Gedächtniskirche", "de": "Kaiser-Wilhelm-Gedächtniskirche", "en": "Kaiser Wilhelm Memorial Church", "fr": "Église du Souvenir"}, "km": 9.57, "lat": 52.5049, "lon": 13.3352, "r": 100, "text": {"da": "Foran dig står Kaiser-Wilhelm-Gedächtniskirche. Kejser Vilhelm den Anden lod den bygge i 1890'erne til minde om sin bedstefar, Vilhelm den Første. I november 1943 ramte bomberne kirken, og i dag står kun ruinen af tårnet tilbage. Berlinerne kalder den den hule tand. Ruinen blev bevaret som et mindesmærke mod krig. Ved siden af byggede arkitekten Egon Eiermann en ny kirke og et nyt tårn med tusindvis af blå glasfelter. Indenfor lyser de, som om man stod i en blå grotte.", "de": "Vor dir steht die Kaiser-Wilhelm-Gedächtniskirche. Kaiser Wilhelm der Zweite ließ sie in den 1890er-Jahren zur Erinnerung an seinen Großvater Wilhelm den Ersten bauen. Im November 1943 trafen Bomben die Kirche, heute steht nur noch die Turmruine. Die Berliner nennen sie den hohlen Zahn. Die Ruine blieb als Mahnmal gegen den Krieg erhalten. Daneben baute der Architekt Egon Eiermann eine neue Kirche und einen neuen Turm mit Tausenden blauen Glasfeldern. Innen leuchten sie, als stünde man in einer blauen Grotte.", "en": "In front of you stands the Kaiser Wilhelm Memorial Church. Emperor Wilhelm the Second had it built in the 1890s in memory of his grandfather, Wilhelm the First. In November 1943 bombs hit the church, and today only the ruined tower remains. Berliners call it the hollow tooth. The ruin was kept as a memorial against war. Next to it, the architect Egon Eiermann built a new church and bell tower with thousands of blue glass panels. Inside they glow, as if you were standing in a blue grotto.", "fr": "Devant vous se dresse l'église du Souvenir, la Kaiser-Wilhelm-Gedächtniskirche. L'empereur Guillaume II l'a fait construire dans les années 1890 en mémoire de son grand-père, Guillaume Ier. En novembre 1943, les bombes ont frappé l'église, et il ne reste aujourd'hui que la tour en ruine. Les Berlinois l'appellent la dent creuse. La ruine a été conservée comme mémorial contre la guerre. À côté, l'architecte Egon Eiermann a construit une nouvelle église et un clocher ornés de milliers de vitraux bleus. À l'intérieur, ils brillent comme dans une grotte bleue."}}, {"n": 8, "name": {"da": "Wittenbergplatz", "de": "Wittenbergplatz", "en": "Wittenbergplatz", "fr": "Wittenbergplatz"}, "km": 10.05, "lat": 52.5017, "lon": 13.3423, "r": 120, "text": {"da": "Du nærmer dig Wittenbergplatz. Midt på pladsen står en af Berlins smukkeste undergrundsstationer. Stationen åbnede i 1902, og den nuværende bygning tegnede Alfred Grenander i 1913. Indenfor er de gamle billetluger i træ bevaret, og på perronen hænger et rundt London Underground-skilt, en venskabsgave fra London i 1952. Foran stationen står et skilt, der siden 1967 har mindet om steder, vi aldrig må glemme, med navnene på nazisternes koncentrationslejre. Om torsdagen og lørdagen er her marked.", "de": "Du näherst dich dem Wittenbergplatz. Mitten auf dem Platz steht einer der schönsten U-Bahnhöfe Berlins. Der Bahnhof wurde 1902 eröffnet, das heutige Gebäude entwarf Alfred Grenander 1913. Innen sind die alten hölzernen Fahrkartenschalter erhalten, und auf dem Bahnsteig hängt ein rundes Schild der London Underground, ein Freundschaftsgeschenk aus London von 1952. Vor dem Bahnhof erinnert seit 1967 eine Tafel an die Orte des Schreckens, die wir niemals vergessen dürfen, mit den Namen der Konzentrationslager. Donnerstags und samstags ist hier Markt.", "en": "You are approaching Wittenbergplatz. In the middle of the square stands one of Berlin's most beautiful underground stations. It opened in 1902, and the present building was designed by Alfred Grenander in 1913. Inside, the old wooden ticket booths survive, and on the platform hangs a round London Underground sign, a gift of friendship from London in 1952. In front of the station, a sign has since 1967 commemorated places of horror that we must never forget, listing the Nazi concentration camps. On Thursdays and Saturdays there is a market here.", "fr": "Vous approchez de la Wittenbergplatz. Au milieu de la place se trouve l'une des plus belles stations de métro de Berlin. Elle a ouvert en 1902, et le bâtiment actuel a été dessiné par Alfred Grenander en 1913. À l'intérieur, les anciens guichets en bois sont conservés, et sur le quai est accroché un panneau rond du métro de Londres, cadeau d'amitié offert par Londres en 1952. Devant la station, un panneau rappelle depuis 1967 les lieux de terreur que nous ne devons jamais oublier, avec les noms des camps de concentration. Le jeudi et le samedi, il y a un marché."}}, {"n": 9, "name": {"da": "KaDeWe", "de": "KaDeWe", "en": "KaDeWe", "fr": "KaDeWe"}, "km": 10.15, "lat": 52.5015, "lon": 13.341, "r": 110, "text": {"da": "Den store bygning på hjørnet er KaDeWe, Kaufhaus des Westens. Varehuset åbnede i 1907 og er med omkring 60.000 kvadratmeter et af de største i Europa. I 1943 styrtede et amerikansk bombefly ned i bygningen, og først i 1950 åbnede den igen. Under den kolde krig var KaDeWe et symbol på Vestens overflod, og da muren faldt i 1989, strømmede østberlinerne hertil. Det mest berømte er madafdelingen på sjette sal med tusindvis af oste, pølser og vine. Lad den vente til efter løbet.", "de": "Das große Gebäude an der Ecke ist das KaDeWe, das Kaufhaus des Westens. Es wurde 1907 eröffnet und ist mit rund 60.000 Quadratmetern eines der größten Kaufhäuser Europas. 1943 stürzte ein amerikanischer Bomber in das Gebäude, erst 1950 öffnete es wieder. Im Kalten Krieg war das KaDeWe ein Symbol für den Wohlstand des Westens, und als 1989 die Mauer fiel, strömten die Ost-Berliner hierher. Am berühmtesten ist die Feinschmeckeretage im sechsten Stock mit Tausenden Käsen, Würsten und Weinen. Die muss bis nach dem Lauf warten.", "en": "The large building on the corner is KaDeWe, the Kaufhaus des Westens, or Department Store of the West. It opened in 1907, and with around 60,000 square metres it is one of the largest department stores in Europe. In 1943 an American bomber crashed into the building, and it only reopened in 1950. During the Cold War KaDeWe stood for Western abundance, and when the Wall fell in 1989, East Berliners flocked here. Its most famous part is the food hall on the sixth floor, with thousands of cheeses, sausages and wines. That will have to wait until after the run.", "fr": "Le grand bâtiment à l'angle, c'est le KaDeWe, le Kaufhaus des Westens, le grand magasin de l'Ouest. Ouvert en 1907, il compte environ 60 000 mètres carrés et figure parmi les plus grands magasins d'Europe. En 1943, un bombardier américain s'est écrasé sur le bâtiment, qui n'a rouvert qu'en 1950. Pendant la guerre froide, le KaDeWe incarnait l'abondance occidentale, et à la chute du Mur en 1989, les Berlinois de l'Est y ont afflué. Sa partie la plus célèbre est l'étage gastronomique au sixième, avec des milliers de fromages, de saucisses et de vins. Ce sera pour après la course."}}, {"n": 10, "name": {"da": "Nollendorfplatz", "de": "Nollendorfplatz", "en": "Nollendorfplatz", "fr": "Nollendorfplatz"}, "km": 10.96, "lat": 52.4993, "lon": 13.3537, "r": 90, "text": {"da": "Du løber ind på Nollendorfplatz i Schöneberg. Allerede i 1920'erne var kvarteret centrum for Berlins homoseksuelle liv med barer og natklubber. Den britiske forfatter Christopher Isherwood boede lige om hjørnet fra 1929 til 1933, og hans fortællinger om Berlin blev senere til musicalen og filmen Cabaret. Nazisterne lukkede stederne og forfulgte de homoseksuelle. Ved stationen minder en lyserød trekant om ofrene. I dag er kvarteret igen centrum for byens queerkultur, og her holdes hvert år en stor gadefest.", "de": "Du läufst auf den Nollendorfplatz in Schöneberg. Schon in den Zwanzigerjahren war der Kiez mit seinen Bars und Nachtclubs das Zentrum des schwulen und lesbischen Lebens in Berlin. Der britische Schriftsteller Christopher Isherwood wohnte von 1929 bis 1933 gleich um die Ecke, und aus seinen Berliner Geschichten wurden später das Musical und der Film Cabaret. Die Nazis schlossen die Lokale und verfolgten Homosexuelle. Am Bahnhof erinnert ein rosa Winkel an die Opfer. Heute ist der Kiez wieder das Zentrum der queeren Kultur, mit einem großen Straßenfest jedes Jahr.", "en": "You are running onto Nollendorfplatz in Schöneberg. As early as the 1920s this neighbourhood was the heart of Berlin's gay life, full of bars and nightclubs. The British writer Christopher Isherwood lived just around the corner from 1929 to 1933, and his Berlin stories later became the musical and film Cabaret. The Nazis closed the venues and persecuted gay people. At the station, a pink triangle commemorates the victims. Today the area is once again the centre of the city's queer culture, with a big street festival every year.", "fr": "Vous arrivez sur la Nollendorfplatz, à Schöneberg. Dès les années 1920, ce quartier était le cœur de la vie homosexuelle berlinoise, avec ses bars et ses cabarets. L'écrivain britannique Christopher Isherwood a vécu juste au coin de la rue de 1929 à 1933, et ses récits berlinois ont inspiré la comédie musicale et le film Cabaret. Les nazis ont fermé les établissements et persécuté les homosexuels. À la station, un triangle rose rappelle les victimes. Aujourd'hui, le quartier est de nouveau le centre de la culture queer, avec une grande fête de rue chaque année."}}, {"n": 11, "name": {"da": "Neue Nationalgalerie", "de": "Neue Nationalgalerie", "en": "Neue Nationalgalerie", "fr": "Neue Nationalgalerie"}, "km": 12.67, "lat": 52.507, "lon": 13.3676, "r": 140, "text": {"da": "Til højre ligger Neue Nationalgalerie, det sidste værk af arkitekten Ludwig Mies van der Rohe. Museet åbnede i 1968 og består af en stor glashal under et fladt stålag, som kun hviler på otte søjler. Taget vejer over tusind tons og blev løftet på plads på en enkelt dag i 1967. Mies sagde, at mindre er mere, og her kan man se, hvad han mente. Under hallen hænger kunst fra det tyvende århundrede. Efter en lang renovering af David Chipperfield genåbnede museet i 2021.", "de": "Rechts liegt die Neue Nationalgalerie, das letzte Werk des Architekten Ludwig Mies van der Rohe. Das Museum wurde 1968 eröffnet und besteht aus einer großen Glashalle unter einem flachen Stahldach, das nur auf acht Stützen ruht. Das Dach wiegt über tausend Tonnen und wurde 1967 an einem einzigen Tag hochgehoben. Mies sagte, weniger ist mehr, und hier sieht man, was er meinte. Im Untergeschoss hängt Kunst des zwanzigsten Jahrhunderts. Nach einer langen Sanierung durch David Chipperfield öffnete das Museum 2021 wieder.", "en": "On your right is the Neue Nationalgalerie, the last work of the architect Ludwig Mies van der Rohe. The museum opened in 1968 and consists of a great glass hall beneath a flat steel roof resting on just eight columns. The roof weighs more than a thousand tonnes and was lifted into place in a single day in 1967. Mies said that less is more, and here you can see what he meant. Below the hall hangs art of the twentieth century. After a long renovation by David Chipperfield, the museum reopened in 2021.", "fr": "Sur votre droite se trouve la Neue Nationalgalerie, dernière œuvre de l'architecte Ludwig Mies van der Rohe. Inauguré en 1968, le musée est un grand hall de verre sous un toit plat en acier qui ne repose que sur huit colonnes. Ce toit pèse plus de mille tonnes et a été hissé en une seule journée en 1967. Mies disait que moins, c'est plus, et l'on comprend ici ce qu'il voulait dire. Sous le hall sont exposées des œuvres du vingtième siècle. Après une longue rénovation menée par David Chipperfield, le musée a rouvert en 2021."}}, {"n": 12, "name": {"da": "Berliner Philharmonie", "de": "Berliner Philharmonie", "en": "Berlin Philharmonie", "fr": "Philharmonie de Berlin"}, "km": 12.94, "lat": 52.5098, "lon": 13.3699, "r": 160, "text": {"da": "Den gule, teltagtige bygning til venstre er Philharmonie, hjemsted for Berliner Philharmoniker, et af verdens bedste orkestre. Arkitekten Hans Scharoun tegnede den, og den åbnede i 1963, tæt på den nye mur. Det revolutionerende var, at orkestret sidder i midten, og at de godt 2.400 tilhørere sidder hele vejen rundt på terrasser, som i en vinmark. Det er blevet kopieret i koncertsale over hele verden. Fordi dirigenten Herbert von Karajan var så dominerende, kaldte berlinerne den Zirkus Karajani.", "de": "Das gelbe, zeltartige Gebäude links ist die Philharmonie, die Heimat der Berliner Philharmoniker, eines der besten Orchester der Welt. Hans Scharoun entwarf sie, eröffnet wurde sie 1963, nahe der gerade gebauten Mauer. Revolutionär war, dass das Orchester in der Mitte sitzt und die gut 2.400 Zuhörer ringsum auf Terrassen, wie in einem Weinberg. Das Prinzip wurde in Konzertsälen auf der ganzen Welt nachgeahmt. Weil der Dirigent Herbert von Karajan so dominant war, nannten die Berliner das Haus Zirkus Karajani.", "en": "The yellow, tent-like building on your left is the Philharmonie, home of the Berlin Philharmonic, one of the finest orchestras in the world. Hans Scharoun designed it, and it opened in 1963, close to the newly built Wall. The revolutionary idea was to put the orchestra in the middle, with some 2,400 listeners seated all around on terraces, like a vineyard. Concert halls all over the world have copied it since. Because the conductor Herbert von Karajan was so dominant, Berliners nicknamed it Circus Karajani.", "fr": "Le bâtiment jaune en forme de tente, sur votre gauche, est la Philharmonie, siège de l'Orchestre philharmonique de Berlin, l'un des meilleurs au monde. Dessinée par Hans Scharoun, elle a été inaugurée en 1963, tout près du Mur tout juste construit. L'idée révolutionnaire était de placer l'orchestre au centre, entouré de quelque 2 400 auditeurs installés en terrasses, comme dans un vignoble. Des salles de concert du monde entier l'ont imitée depuis. Comme le chef Herbert von Karajan y régnait en maître, les Berlinois l'avaient surnommée le cirque Karajani."}}, {"n": 13, "name": {"da": "Potsdamer Platz", "de": "Potsdamer Platz", "en": "Potsdamer Platz", "fr": "Potsdamer Platz"}, "km": 13.32, "lat": 52.5094, "lon": 13.3765, "r": 100, "text": {"da": "Du løber ind på Potsdamer Platz. I 1920'erne var det en af Europas travleste pladser med sporvogne, biler og hestevogne, og i 1924 kom et af Tysklands første lyskryds op her. En kopi af lystårnet står stadig på pladsen. Krigen ødelagde næsten alt, og fra 1961 løb muren lige hen over pladsen, som blev til ingenmandsland. Efter genforeningen blev her Europas største byggeplads, og i dag står højhuse af blandt andre Renzo Piano og Helmut Jahn. Se efter murstykkerne ved stationen.", "de": "Du läufst auf den Potsdamer Platz. In den Zwanzigerjahren war er mit Straßenbahnen, Autos und Pferdewagen einer der verkehrsreichsten Plätze Europas, und 1924 stand hier eine der ersten Ampeln Deutschlands. Ein Nachbau des Ampelturms steht noch heute auf dem Platz. Der Krieg zerstörte fast alles, und ab 1961 verlief die Mauer quer über den Platz, der zum Niemandsland wurde. Nach der Wiedervereinigung entstand hier Europas größte Baustelle, heute stehen Hochhäuser unter anderem von Renzo Piano und Helmut Jahn. Achte auf die Mauerstücke am Bahnhof.", "en": "You are running onto Potsdamer Platz. In the 1920s it was one of the busiest squares in Europe, crowded with trams, cars and horse carts, and in 1924 one of Germany's first traffic lights went up here. A replica of the traffic light tower still stands on the square. The war destroyed almost everything, and from 1961 the Wall ran straight across it, turning it into no man's land. After reunification it became the largest building site in Europe, and today it has towers by architects such as Renzo Piano and Helmut Jahn. Look for the pieces of the Wall by the station.", "fr": "Vous arrivez sur la Potsdamer Platz. Dans les années 1920, c'était l'une des places les plus animées d'Europe, encombrée de tramways, de voitures et de calèches, et l'un des premiers feux de circulation d'Allemagne y a été installé en 1924. Une réplique de la tour du feu se dresse toujours sur la place. La guerre a presque tout détruit, et à partir de 1961 le Mur la traversait de part en part, la transformant en no man's land. Après la réunification, elle est devenue le plus grand chantier d'Europe, avec aujourd'hui des tours signées notamment Renzo Piano et Helmut Jahn. Cherchez les fragments du Mur près de la gare."}}, {"n": 14, "name": {"da": "Leipziger Platz", "de": "Leipziger Platz", "en": "Leipziger Platz", "fr": "Leipziger Platz"}, "km": 13.5, "lat": 52.5096, "lon": 13.379, "r": 90, "text": {"da": "Lige efter Potsdamer Platz løber du gennem Leipziger Platz, der er ottekantet. Den blev anlagt i 1730'erne ved en af byportene, samtidig med den firkantede Pariser Platz og den runde Mehringplatz. Omkring år 1900 lå Wertheim her, et af Europas største varehuse. Under delingen gik muren tværs over pladsen, og bygningerne forsvandt. Siden 1990'erne er den ottekantede form genskabt med nye huse, og på Wertheims gamle grund ligger i dag Mall of Berlin. Om lidt drejer du til højre ad Wilhelmstraße.", "de": "Gleich nach dem Potsdamer Platz läufst du über den achteckigen Leipziger Platz. Er wurde in den 1730er-Jahren an einem der Stadttore angelegt, zur selben Zeit wie der quadratische Pariser Platz und der runde Mehringplatz. Um 1900 stand hier Wertheim, eines der größten Kaufhäuser Europas. Während der Teilung verlief die Mauer quer über den Platz, und die Gebäude verschwanden. Seit den Neunzigerjahren ist die achteckige Form mit neuen Häusern wiederhergestellt, und auf dem alten Wertheim-Grundstück steht heute die Mall of Berlin. Gleich geht es rechts in die Wilhelmstraße.", "en": "Right after Potsdamer Platz you run through Leipziger Platz, which is octagonal. It was laid out in the 1730s at one of the city gates, at the same time as the square Pariser Platz and the round Mehringplatz. Around 1900 the Wertheim store stood here, one of the largest department stores in Europe. During the division the Wall ran across the square, and its buildings disappeared. Since the 1990s the octagon has been restored with new buildings, and the Mall of Berlin now stands on the old Wertheim site. Soon you turn right onto Wilhelmstraße.", "fr": "Juste après la Potsdamer Platz, vous traversez la Leipziger Platz, de forme octogonale. Elle a été aménagée dans les années 1730 à l'une des portes de la ville, en même temps que la Pariser Platz, carrée, et la Mehringplatz, ronde. Vers 1900 se dressait ici Wertheim, l'un des plus grands magasins d'Europe. Pendant la division, le Mur traversait la place, et ses immeubles ont disparu. Depuis les années 1990, l'octogone a été reconstitué avec de nouveaux bâtiments, et le Mall of Berlin occupe aujourd'hui l'ancien terrain de Wertheim. Bientôt, vous tournez à droite dans la Wilhelmstraße."}}, {"n": 15, "name": {"da": "Gendarmenmarkt", "de": "Gendarmenmarkt", "en": "Gendarmenmarkt", "fr": "Gendarmenmarkt"}, "km": 15.25, "lat": 52.5137, "lon": 13.3927, "r": 100, "text": {"da": "For lidt siden passerede du Checkpoint Charlie, den kolde krigs mest berømte grænseovergang. Nu løber du langs Gendarmenmarkt, som mange kalder Berlins smukkeste plads. Navnet kommer fra et kavaleriregiment, Gens d'armes, der havde stalde her i 1700-tallet. Mod nord ligger Den Franske Kirke, bygget af huguenotter, der flygtede fra Frankrig, og mod syd Den Tyske Kirke. De to ens kuppeltårne kom til under Frederik den Store. I midten står Schinkels koncerthus fra 1821 med en statue af digteren Schiller foran.", "de": "Vor Kurzem bist du am Checkpoint Charlie vorbeigelaufen, dem berühmtesten Grenzübergang des Kalten Krieges. Jetzt läufst du am Gendarmenmarkt entlang, den viele für den schönsten Platz Berlins halten. Der Name stammt vom Reiterregiment Gens d'armes, das hier im 18. Jahrhundert seine Ställe hatte. Im Norden steht der Französische Dom, gebaut von Hugenotten, die aus Frankreich geflohen waren, im Süden der Deutsche Dom. Die beiden gleichen Kuppeltürme kamen unter Friedrich dem Großen hinzu. In der Mitte steht Schinkels Konzerthaus von 1821, davor ein Denkmal für Friedrich Schiller.", "en": "A few minutes ago you passed Checkpoint Charlie, the most famous border crossing of the Cold War. Now you are running alongside the Gendarmenmarkt, which many call the most beautiful square in Berlin. The name comes from the Gens d'armes, a cavalry regiment that kept its stables here in the eighteenth century. To the north is the French Church, built by Huguenots who had fled France, and to the south the German Church. Their two matching domed towers were added under Frederick the Great. In the middle stands Schinkel's concert hall from 1821, with a statue of the poet Schiller in front.", "fr": "Il y a quelques minutes, vous êtes passé devant Checkpoint Charlie, le poste-frontière le plus célèbre de la guerre froide. Vous longez maintenant le Gendarmenmarkt, que beaucoup considèrent comme la plus belle place de Berlin. Son nom vient des gens d'armes, un régiment de cavalerie qui avait ici ses écuries au dix-huitième siècle. Au nord se dresse l'église française, bâtie par les huguenots qui avaient fui la France, et au sud l'église allemande. Leurs deux tours à coupole identiques ont été ajoutées sous Frédéric le Grand. Au centre se trouve la salle de concert de Schinkel, de 1821, précédée d'une statue du poète Schiller."}}, {"n": 16, "name": {"da": "Humboldt Forum", "de": "Humboldt Forum", "en": "Humboldt Forum", "fr": "Humboldt Forum"}, "km": 16.42, "lat": 52.5175, "lon": 13.4025, "r": 150, "text": {"da": "Den store barokbygning til venstre er Humboldt Forum, det genopbyggede Berliner Schloss. I næsten 500 år boede de brandenburgske kurfyrster, de preussiske konger og de tyske kejsere her. Slottet blev skadet i krigen, og i 1950 lod det østtyske styre resterne sprænge i luften. I stedet byggede man Palast der Republik med DDR's parlament, som berlinerne kaldte Erichs lampebutik. Det blev revet ned i 2000'erne, og slottets facader blev genopført. Siden 2021 har museet her været opkaldt efter brødrene Humboldt.", "de": "Das große Barockgebäude links ist das Humboldt Forum, das wiederaufgebaute Berliner Schloss. Fast 500 Jahre lang residierten hier die brandenburgischen Kurfürsten, die preußischen Könige und die deutschen Kaiser. Das Schloss wurde im Krieg beschädigt, und 1950 ließ die DDR-Führung die Reste sprengen. An seiner Stelle entstand der Palast der Republik mit der Volkskammer, den die Berliner Erichs Lampenladen nannten. Er wurde in den 2000er-Jahren abgerissen, und die Schlossfassaden wurden neu errichtet. Seit 2021 trägt das Museum hier den Namen der Brüder Humboldt.", "en": "The large baroque building on your left is the Humboldt Forum, the rebuilt Berlin Palace. For almost 500 years it was home to the electors of Brandenburg, the kings of Prussia and the German emperors. The palace was damaged in the war, and in 1950 the East German government had what was left blown up. In its place came the Palace of the Republic, home of the East German parliament, which Berliners called Erich's lamp shop. It was demolished in the 2000s, and the palace facades were rebuilt. Since 2021 the museum here has been named after the Humboldt brothers.", "fr": "Le grand bâtiment baroque sur votre gauche est le Humboldt Forum, le château de Berlin reconstruit. Pendant près de 500 ans, il a abrité les princes électeurs de Brandebourg, les rois de Prusse et les empereurs allemands. Endommagé pendant la guerre, le château a été dynamité en 1950 sur ordre du régime est-allemand. À sa place s'est élevé le Palais de la République, siège du parlement de la RDA, que les Berlinois surnommaient le magasin de lampes d'Erich. Il a été démoli dans les années 2000, et les façades du château ont été reconstruites. Depuis 2021, le musée porte le nom des frères Humboldt."}}, {"n": 17, "name": {"da": "Rotes Rathaus", "de": "Rotes Rathaus", "en": "Red City Hall", "fr": "Hôtel de ville rouge"}, "km": 16.83, "lat": 52.5185, "lon": 13.4083, "r": 100, "text": {"da": "Til højre ligger Rotes Rathaus, Berlins rådhus. Det blev bygget mellem 1861 og 1869 i røde mursten, og det er dem, navnet kommer fra, ikke politikken. Tårnet er 74 meter højt, og hele vejen rundt om bygningen løber en frise med 36 relieffer, der fortæller byens historie. Under delingen var det Østberlins rådhus, mens Vestberlin blev styret fra Rathaus Schöneberg. Siden 1991 har borgmesteren for hele Berlin haft kontor her. Foran står Neptunbrønden, og forude ser du fjernsynstårnet.", "de": "Rechts liegt das Rote Rathaus, der Sitz des Berliner Senats. Es wurde zwischen 1861 und 1869 aus roten Ziegeln gebaut, und daher kommt der Name, nicht von der Politik. Der Turm ist 74 Meter hoch, und rund um das Gebäude läuft ein Fries mit 36 Reliefs, die die Geschichte der Stadt erzählen. Während der Teilung war es das Rathaus von Ost-Berlin, West-Berlin wurde vom Rathaus Schöneberg aus regiert. Seit 1991 sitzt hier der Regierende Bürgermeister von ganz Berlin. Davor steht der Neptunbrunnen, und vor dir siehst du den Fernsehturm.", "en": "On your right is the Rotes Rathaus, the Red City Hall. It was built between 1861 and 1869 from red brick, and that is where the name comes from, not from politics. The tower is 74 metres high, and a frieze of 36 reliefs telling the story of the city runs all the way around the building. During the division it was East Berlin's city hall, while West Berlin was governed from Schöneberg town hall. Since 1991 the mayor of the whole of Berlin has had an office here. In front is the Neptune Fountain, and ahead of you rises the TV tower.", "fr": "Sur votre droite se trouve le Rotes Rathaus, l'hôtel de ville rouge. Il a été construit entre 1861 et 1869 en briques rouges, d'où son nom, qui n'a rien à voir avec la politique. Sa tour mesure 74 mètres, et une frise de 36 reliefs racontant l'histoire de la ville fait le tour du bâtiment. Pendant la division, c'était l'hôtel de ville de Berlin-Est, tandis que Berlin-Ouest était gouverné depuis la mairie de Schöneberg. Depuis 1991, le maire de tout Berlin y a son bureau. Devant se trouve la fontaine de Neptune, et devant vous s'élève la tour de télévision."}}, {"n": 18, "name": {"da": "Karl-Marx-Allee", "de": "Karl-Marx-Allee", "en": "Karl-Marx-Allee", "fr": "Karl-Marx-Allee"}, "km": 17.45, "lat": 52.5214, "lon": 13.4165, "r": 100, "text": {"da": "Nu løber du ud på Karl-Marx-Allee, DDR's prestigeboulevard. Den blev bygget i 1950'erne under navnet Stalinallee, næsten 90 meter bred, med paladslignende boligblokke, som berlinerne kaldte bryllupskagestil. Det var bygningsarbejderne her, der i juni 1953 nedlagde arbejdet, og strejken blev til den folkeopstand, som gaden ved TU er opkaldt efter. Så ruten har bundet en sløjfe. Denne første del ved Alexanderplatz er yngre og modernistisk, med Kino International og Haus des Lehrers. Du vender om lidt længere fremme.", "de": "Jetzt läufst du auf die Karl-Marx-Allee, die Prachtstraße der DDR. Sie wurde in den Fünfzigerjahren als Stalinallee gebaut, fast 90 Meter breit, mit palastartigen Wohnblöcken im sogenannten Zuckerbäckerstil. Hier legten im Juni 1953 die Bauarbeiter die Arbeit nieder, und aus ihrem Streik wurde der Volksaufstand, nach dem die Straße an der TU benannt ist. So schließt sich der Kreis. Dieser erste Abschnitt am Alexanderplatz ist jünger und modern, mit dem Kino International und dem Haus des Lehrers. Etwas weiter vorne wendest du.", "en": "Now you are running out onto Karl-Marx-Allee, the showcase boulevard of East Germany. It was built in the 1950s as Stalinallee, almost 90 metres wide, with palatial apartment blocks in what Berliners called wedding cake style. It was the construction workers here who downed tools in June 1953, and their strike grew into the uprising that the street by the university is named after. So the route has come full circle. This first stretch by Alexanderplatz is younger and modernist, with the Kino International and the House of Teachers. You turn around a little further on.", "fr": "Vous courez maintenant sur la Karl-Marx-Allee, l'avenue de prestige de la RDA. Construite dans les années 1950 sous le nom de Stalinallee, elle mesure près de 90 mètres de large et est bordée d'immeubles-palais dans un style que les Berlinois appelaient pièce montée. Ce sont les ouvriers de ses chantiers qui ont cessé le travail en juin 1953, et leur grève est devenue le soulèvement qui a donné son nom à la rue de l'université. La boucle est bouclée. Ce premier tronçon près de l'Alexanderplatz est plus récent et moderniste, avec le Kino International et la Maison des enseignants. Vous faites demi-tour un peu plus loin."}}, {"n": 19, "name": {"da": "Berliner Dom", "de": "Berliner Dom", "en": "Berlin Cathedral", "fr": "Cathédrale de Berlin"}, "km": 19.2, "lat": 52.5191, "lon": 13.4011, "r": 100, "text": {"da": "Efter broen over Spree ligger Berliner Dom på din højre side, Tysklands største protestantiske kirke. Den nuværende bygning blev opført mellem 1894 og 1905 for kejser Vilhelm den Anden, og den grønne kuppel er næsten 100 meter høj. I krypten står omkring 90 sarkofager med medlemmer af slægten Hohenzollern. Domkirken blev hårdt skadet i krigen og blev først færdigrestaureret i 1993. Bag den ligger Museumsøen med fem verdensberømte museer, der siden 1999 har været på UNESCO's verdensarvsliste.", "de": "Hinter der Brücke über die Spree liegt rechts der Berliner Dom, die größte evangelische Kirche Deutschlands. Der heutige Bau entstand zwischen 1894 und 1905 für Kaiser Wilhelm den Zweiten, und die grüne Kuppel ist fast 100 Meter hoch. In der Gruft stehen rund 90 Sarkophage von Mitgliedern des Hauses Hohenzollern. Der Dom wurde im Krieg schwer beschädigt und erst 1993 vollständig restauriert. Dahinter liegt die Museumsinsel mit fünf weltberühmten Museen, die seit 1999 zum UNESCO-Welterbe gehört.", "en": "After the bridge over the Spree, Berlin Cathedral stands on your right, the largest Protestant church in Germany. The present building went up between 1894 and 1905 for Emperor Wilhelm the Second, and its green dome is almost 100 metres high. In the crypt lie some 90 sarcophagi of members of the Hohenzollern family. The cathedral was badly damaged in the war and was only fully restored in 1993. Behind it is Museum Island, with five world-famous museums, a UNESCO World Heritage Site since 1999.", "fr": "Après le pont sur la Spree, la cathédrale de Berlin se dresse sur votre droite. C'est la plus grande église protestante d'Allemagne. Le bâtiment actuel a été construit entre 1894 et 1905 pour l'empereur Guillaume II, et sa coupole verte culmine à près de 100 mètres. Dans la crypte reposent quelque 90 sarcophages de membres de la famille Hohenzollern. Gravement endommagée pendant la guerre, la cathédrale n'a été entièrement restaurée qu'en 1993. Derrière s'étend l'île aux Musées, avec cinq musées de renommée mondiale, inscrite au patrimoine mondial de l'UNESCO depuis 1999."}}, {"n": 20, "name": {"da": "Brandenburger Tor", "de": "Brandenburger Tor", "en": "Brandenburg Gate", "fr": "Porte de Brandebourg"}, "km": 20.7, "lat": 52.5163, "lon": 13.3777, "r": 150, "text": {"da": "Foran dig ligger Brandenburger Tor, Berlins vartegn. Porten blev bygget mellem 1788 og 1791 efter forbillede fra indgangen til Akropolis i Athen, og på toppen kører sejrsgudinden i sin firspand, kvadrigaen. I 1806 tog Napoleon kvadrigaen med til Paris, men i 1814 kom den hjem igen, og pladsen foran fik navnet Pariser Platz. Under delingen stod porten i grænsezonen, hvor ingen måtte komme. Den 22. december 1989 blev den åbnet. Løb nu gennem porten og ind i mål.", "de": "Vor dir liegt das Brandenburger Tor, das Wahrzeichen Berlins. Es wurde zwischen 1788 und 1791 nach dem Vorbild des Eingangstors der Akropolis in Athen gebaut, und oben fährt die Siegesgöttin in ihrem Viergespann, der Quadriga. 1806 nahm Napoleon die Quadriga mit nach Paris, doch 1814 kehrte sie zurück, und der Platz davor bekam den Namen Pariser Platz. Während der Teilung stand das Tor im Grenzgebiet, wo niemand hindurfte. Am 22. Dezember 1989 wurde es geöffnet. Lauf jetzt durch das Tor und ins Ziel.", "en": "Ahead of you is the Brandenburg Gate, the symbol of Berlin. It was built between 1788 and 1791, modelled on the gateway to the Acropolis in Athens, and on top the goddess of victory drives her four-horse chariot, the Quadriga. In 1806 Napoleon took the Quadriga to Paris, but in 1814 it came home, and the square in front was named Pariser Platz. During the division the gate stood in the border zone, where no one was allowed to go. On the 22nd of December 1989 it was opened. Now run through the gate and into the finish.", "fr": "Devant vous se dresse la porte de Brandebourg, emblème de Berlin. Elle a été construite entre 1788 et 1791 sur le modèle des Propylées de l'Acropole d'Athènes, et à son sommet la déesse de la victoire conduit son char à quatre chevaux, le quadrige. En 1806, Napoléon a emporté le quadrige à Paris, mais il est revenu en 1814, et la place qui précède la porte a pris le nom de Pariser Platz. Pendant la division, la porte se trouvait dans la zone frontalière, interdite à tous. Elle a été ouverte le 22 décembre 1989. Passez maintenant la porte et franchissez la ligne d'arrivée."}}];
+const FINISH = {"da": "Tillykke. Du har løbet et halvmarathon, 21,1 kilometer, gennem Berlin. Du har passeret 20 seværdigheder, fra TU Berlin og Schloss Charlottenburg over Kurfürstendamm og Potsdamer Platz til Karl-Marx-Allee og gennem Brandenburger Tor. Drik noget vand, og gå et par minutter, før du sætter dig. Danke, og vi ses på næste tur.", "de": "Herzlichen Glückwunsch. Du bist einen Halbmarathon gelaufen, 21,1 Kilometer quer durch Berlin. Du bist an 20 Sehenswürdigkeiten vorbeigekommen, von der TU Berlin und Schloss Charlottenburg über den Kurfürstendamm und den Potsdamer Platz bis zur Karl-Marx-Allee und durch das Brandenburger Tor. Trink etwas Wasser und geh ein paar Minuten, bevor du dich hinsetzt. Danke, und bis zum nächsten Lauf.", "en": "Congratulations. You have run a half marathon, 21.1 kilometres, through Berlin. You have passed 20 sights, from TU Berlin and Charlottenburg Palace, along the Kurfürstendamm and past Potsdamer Platz, to Karl-Marx-Allee and through the Brandenburg Gate. Drink some water and walk for a few minutes before you sit down. Danke, and see you on the next run.", "fr": "Félicitations. Vous venez de courir un semi-marathon, 21,1 kilomètres, à travers Berlin. Vous êtes passé devant 20 monuments, de la TU Berlin et du château de Charlottenbourg au Kurfürstendamm et à la Potsdamer Platz, jusqu'à la Karl-Marx-Allee et à travers la porte de Brandebourg. Buvez un peu d'eau et marchez quelques minutes avant de vous asseoir. Danke, et à la prochaine course."};
+
+
+// ---------- Sprog ----------
+const LANGS = { da: { bcp: "da-DK", name: "dansk" }, de: { bcp: "de-DE", name: "tysk" }, en: { bcp: "en-GB", name: "engelsk" }, fr: { bcp: "fr-FR", name: "fransk" } };
+let LANG = "da";
+const art = s => s === "Unter den Linden" ? s : /(straße|allee|brücke)$/i.test(s) ? "la " + s : "le " + s;
+const T = {
+  da: { tagline: "Halvmarathon · fra TU Berlin til Brandenburger Tor", dist: "21,1", km: "kilometer", sights: "seværdigheder", eta: "t ved 5:55/km", list: "Seværdigheder på ruten", start: "Start løb", kmOf: "km af 21,1", time: "tid",
+    nextPoi: (n, d) => `Næste seværdighed: <b>${n}</b> om ${d} km`, nextFinish: "Næste: <b>målet ved Brandenburger Tor</b>", offTitle: "Uden for ruten", offSub: "Vend om og løb tilbage", straight: "Ligeud til målet",
+    narrating: n => `Fortæller nu · ${n} af 20`, ducked: "Musik dæmpet", guidance: "Rutevejledning", turnAhead: "Sving forude", kmTitle: "Kilometer", offKind: "Afvigelse", welcomeTitle: "Velkommen", finishTitle: "Mål",
+    done: "Halvmarathon gennemført", sumSub: "21,1 km fra TU Berlin til Brandenburger Tor", sumHeard: "fortællinger", toOverview: "Til oversigten", mapStart: "Start", mapEiffel: "Mål",
+    welcome: "Velkommen til Berlin Sightrun. Løbet starter ved TU Berlin. Løb mod vest ad Straße des 17. Juni.",
+    pre: p => `Om 100 meter, ${p}.`, now: p => `${cap(p)} nu.`,
+    kmCall: (k, tot, sp, avg) => `${k} kilometer. Tid: ${dur(tot, ["time", "timer"], ["minut", "minutter"], "sekunder", " og ")}. Sidste kilometer: ${pc(sp, "minut", "minutter")}.` + (k > 1 ? ` Gennemsnit: ${pc(avg, "minut", "minutter")} per kilometer.` : ""),
+    toStart: d => `${d} til start`, walkHint: "Gå til startpunktet ved TU Berlin", atStart: "Du er ved start", atStartSub: "Løbet starter nu",
+    goToStart: d => `Du er ${d} fra starten. Gå hen til TU Berlins hovedbygning på Straße des 17. Juni. Løbet starter automatisk, når du er der.`, distW: "meter",
+    lastKm: "sidste km", avgPaceShort: "snit min/km", splitsTitle: "Kilometertider", fastest: "hurtigste", kmReached: k => `Kilometer ${k}`,
+    off: s => `Du er drejet væk fra ruten. Vend om, og løb tilbage til ${s}.`, backOn: "Du er tilbage på ruten. Fortsæt.",
+    turn: (dir, sharp, st) => `drej ${sharp ? "skarpt " : ""}til ${dir > 0 ? "højre" : "venstre"} ${/brücke/i.test(st) ? "over " + st : (/platz$/i.test(st) || /Markt$/.test(st)) ? "ind på " + st : "ad " + st}` },
+  de: { tagline: "Halbmarathon · von der TU Berlin zum Brandenburger Tor", dist: "21,1", km: "Kilometer", sights: "Sehenswürdigkeiten", eta: "Std. bei 5:55/km", list: "Sehenswürdigkeiten auf der Route", start: "Lauf starten", kmOf: "km von 21,1", time: "Zeit",
+    nextPoi: (n, d) => `Nächste Sehenswürdigkeit: <b>${n}</b> in ${d} km`, nextFinish: "Als Nächstes: <b>das Ziel am Brandenburger Tor</b>", offTitle: "Abseits der Route", offSub: "Dreh um und lauf zurück", straight: "Geradeaus ins Ziel",
+    narrating: n => `Erzählt gerade · ${n} von 20`, ducked: "Musik leiser", guidance: "Navigation", turnAhead: "Abbiegung voraus", kmTitle: "Kilometer", offKind: "Abweichung", welcomeTitle: "Willkommen", finishTitle: "Ziel",
+    done: "Halbmarathon geschafft", sumSub: "21,1 km von der TU Berlin zum Brandenburger Tor", sumHeard: "Geschichten gehört", toOverview: "Zur Übersicht", mapStart: "Start", mapEiffel: "Ziel",
+    welcome: "Willkommen bei Berlin Sightrun. Der Lauf startet an der TU Berlin. Lauf auf der Straße des 17. Juni nach Westen.",
+    pre: p => `In 100 Metern ${p}.`, now: p => `Jetzt ${p}.`,
+    kmCall: (k, tot, sp, avg) => `${k} Kilometer. Zeit: ${dur(tot, ["Stunde", "Stunden"], ["Minute", "Minuten"], "Sekunden", " und ")}. Letzter Kilometer: ${pc(sp, "Minute", "Minuten")}.` + (k > 1 ? ` Schnitt: ${pc(avg, "Minute", "Minuten")} pro Kilometer.` : ""),
+    toStart: d => `${d} bis zum Start`, walkHint: "Geh zum Start an der TU Berlin", atStart: "Du bist am Start", atStartSub: "Der Lauf beginnt jetzt",
+    goToStart: d => `Du bist ${d} vom Start entfernt. Geh zum Hauptgebäude der TU Berlin an der Straße des 17. Juni. Der Lauf startet automatisch, wenn du dort bist.`, distW: "Meter",
+    lastKm: "letzter km", avgPaceShort: "Schnitt min/km", splitsTitle: "Kilometerzeiten", fastest: "schnellster", kmReached: k => `Kilometer ${k}`,
+    off: s => `Du hast die Route verlassen. Dreh um und lauf zurück Richtung ${s}.`, backOn: "Du bist wieder auf der Route. Weiter so.",
+    turn: (dir, sharp, st) => `${sharp ? "scharf " : ""}${dir > 0 ? "rechts" : "links"} abbiegen ${/brücke/i.test(st) ? "über die " + st : /straße$/i.test(st) ? "in die " + st : /allee$/i.test(st) ? "auf die " + st : (/damm$/i.test(st) || /platz$/i.test(st)) ? "auf den " + st : "Richtung " + st}` },
+  en: { tagline: "Half marathon · from TU Berlin to the Brandenburg Gate", dist: "21.1", km: "kilometres", sights: "sights", eta: "h at 5:55/km", list: "Sights on the route", start: "Start run", kmOf: "km of 21.1", time: "time",
+    nextPoi: (n, d) => `Next sight: <b>${n}</b> in ${d} km`, nextFinish: "Next: <b>the finish at the Brandenburg Gate</b>", offTitle: "Off route", offSub: "Turn around and run back", straight: "Straight on to the finish",
+    narrating: n => `Now telling · ${n} of 20`, ducked: "Music lowered", guidance: "Route guidance", turnAhead: "Turn ahead", kmTitle: "Kilometre", offKind: "Off route", welcomeTitle: "Welcome", finishTitle: "Finish",
+    done: "Half marathon completed", sumSub: "21.1 km from TU Berlin to the Brandenburg Gate", sumHeard: "stories heard", toOverview: "Back to overview", mapStart: "Start", mapEiffel: "Finish",
+    welcome: "Welcome to Berlin Sightrun. The run starts at TU Berlin. Run west along Straße des 17. Juni.",
+    pre: p => `In 100 metres, ${p}.`, now: p => `${cap(p)} now.`,
+    kmCall: (k, tot, sp, avg) => `${k === 1 ? "1 kilometre" : k + " kilometres"}. Time: ${dur(tot, ["hour", "hours"], ["minute", "minutes"], "seconds", " ")}. Last kilometre: ${pc(sp, "minute", "minutes")}.` + (k > 1 ? ` Average: ${pc(avg, "minute", "minutes")} per kilometre.` : ""),
+    toStart: d => `${d} to the start`, walkHint: "Walk to the start at TU Berlin", atStart: "You are at the start", atStartSub: "The run starts now",
+    goToStart: d => `You are ${d} from the start. Walk to the TU Berlin main building on Straße des 17. Juni. The run starts automatically when you get there.`, distW: "metres",
+    lastKm: "last km", avgPaceShort: "avg min/km", splitsTitle: "Kilometre splits", fastest: "fastest", kmReached: k => `Kilometre ${k}`,
+    off: s => `You have left the route. Turn around and run back to ${s}.`, backOn: "You are back on the route. Keep going.",
+    turn: (dir, sharp, st) => `turn ${sharp ? "sharp " : ""}${dir > 0 ? "right" : "left"} ${/brücke/i.test(st) ? "over " + st : "onto " + st}` },
+  fr: { tagline: "Semi-marathon · de la TU Berlin à la porte de Brandebourg", dist: "21,1", km: "kilomètres", sights: "monuments", eta: "h à 5:55/km", list: "Monuments sur le parcours", start: "Démarrer", kmOf: "km sur 21,1", time: "temps",
+    nextPoi: (n, d) => `Prochain monument : <b>${n}</b> dans ${d} km`, nextFinish: "Ensuite : <b>l'arrivée à la porte de Brandebourg</b>", offTitle: "Hors parcours", offSub: "Faites demi-tour", straight: "Tout droit jusqu'à l'arrivée",
+    narrating: n => `Récit en cours · ${n} sur 20`, ducked: "Musique baissée", guidance: "Guidage", turnAhead: "Virage à venir", kmTitle: "Kilomètre", offKind: "Écart", welcomeTitle: "Bienvenue", finishTitle: "Arrivée",
+    done: "Semi-marathon terminé", sumSub: "21,1 km de la TU Berlin à la porte de Brandebourg", sumHeard: "récits écoutés", toOverview: "Retour à l'aperçu", mapStart: "Départ", mapEiffel: "Arrivée",
+    welcome: "Bienvenue sur Berlin Sightrun. La course commence à la TU Berlin. Courez vers l'ouest sur la Straße des 17. Juni.",
+    pre: p => `Dans 100 mètres, ${p}.`, now: p => `${cap(p)} maintenant.`,
+    kmCall: (k, tot, sp, avg) => `${k === 1 ? "1 kilomètre" : k + " kilomètres"}. Temps : ${dur(tot, ["heure", "heures"], ["minute", "minutes"], "", " ")}. Dernier kilomètre : ${pc(sp, "minute", "minutes")}.` + (k > 1 ? ` Moyenne : ${pc(avg, "minute", "minutes")} au kilomètre.` : ""),
+    toStart: d => `${d} du départ`, walkHint: "Rendez-vous au départ, à la TU Berlin", atStart: "Vous êtes au départ", atStartSub: "La course commence",
+    goToStart: d => `Vous êtes à ${d} du départ. Rendez-vous devant le bâtiment principal de la TU Berlin, sur la Straße des 17. Juni. La course démarre automatiquement à votre arrivée.`, distW: "mètres",
+    lastKm: "dernier km", avgPaceShort: "moy. min/km", splitsTitle: "Temps au kilomètre", fastest: "le plus rapide", kmReached: k => `Kilomètre ${k}`,
+    off: s => `Vous avez quitté le parcours. Faites demi-tour et revenez vers ${art(s)}.`, backOn: "Vous êtes de retour sur le parcours. Continuez.",
+    turn: (dir, sharp, st) => `tournez ${sharp ? "franchement " : ""}à ${dir > 0 ? "droite" : "gauche"} ${/brücke/i.test(st) ? "pour traverser " + art(st) : "vers " + art(st)}` },
+};
+const t = () => T[LANG];
+// Talt varighed og fart, fx "29 minutter og 35 sekunder" og "5 minutter 48".
+function dur(sec, hW, mW, sW, join) {
+  sec = Math.round(sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  if (h > 0) return `${h} ${h === 1 ? hW[0] : hW[1]}${join}${m} ${m === 1 ? mW[0] : mW[1]}`;
+  return `${m} ${m === 1 ? mW[0] : mW[1]}${join}${s}${sW ? " " + sW : ""}`;
+}
+function pc(sec, one, many) { sec = Math.round(sec); const m = Math.floor(sec / 60), s = sec % 60; return `${m} ${m === 1 ? one : many}` + (s ? ` ${s}` : ""); }
+const phr = m => T[LANG].turn(m.dir, m.sharp, m.street);
+
+const TOTAL = 21097.5;           // street metres
+const START_R = 50;              // m: inden for denne afstand er man ved startpunktet
+const PRE_START = [52.5134, 13.3330]; // ca. 440 m øst for TU Berlin, Straße des 17. Juni
+const PACE = 355;                // planlagt fart, s pr. km (5:55)
+// Den virtuelle løber varierer tempoet lidt: frisk i starten, lidt træt efter Karl-Marx-Allee.
+const paceAt = m => 355 + 11 * Math.sin(m / 1300) - (m < 2300 ? 12 : 0) + (m > 18000 ? 14 : 0);
+
+// ---------- Geometry ----------
+const R = 6371000, rad = d => d * Math.PI / 180;
+function hav(a, b) { const dLa = rad(b[0]-a[0]), dLo = rad(b[1]-a[1]); const h = Math.sin(dLa/2)**2 + Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function bearing(a, b) { const y = Math.sin(rad(b[1]-a[1]))*Math.cos(rad(b[0])); const x = Math.cos(rad(a[0]))*Math.sin(rad(b[0])) - Math.sin(rad(a[0]))*Math.cos(rad(b[0]))*Math.cos(rad(b[1]-a[1])); return (Math.atan2(y, x)*180/Math.PI + 360) % 360; }
+const pts = WP.map(w => [w[1], w[2]]);
+const rawCum = [0]; for (let i = 1; i < pts.length; i++) rawCum.push(rawCum[i-1] + hav(pts[i-1], pts[i]));
+const SCALE = TOTAL / rawCum[rawCum.length-1];
+const cum = rawCum.map(d => d * SCALE);   // street metres at each waypoint
+
+function posAt(m) {
+  m = Math.max(0, Math.min(TOTAL, m));
+  let i = 1; while (i < cum.length - 1 && cum[i] < m) i++;
+  const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
+  return { lat: pts[i-1][0] + (pts[i][0]-pts[i-1][0]) * t, lon: pts[i-1][1] + (pts[i][1]-pts[i-1][1]) * t, seg: i-1, hdg: bearing(pts[i-1], pts[i]) };
+}
+const SX = lon => 80 + (lon - 13.2934) * 4754;
+const SY = lat => 142 + (52.5229 - lat) * 7803;
+const UNIT_M = 14.25; // metres per svg unit (approx.)
+
+// Maneuvers
+const MAN = [];
+for (let i = 1; i < pts.length - 1; i++) {
+  let d = bearing(pts[i], pts[i+1]) - bearing(pts[i-1], pts[i]);
+  d = ((d + 540) % 360) - 180;
+  if (Math.abs(d) < 35) continue;
+  MAN.push({ at: cum[i], dir: d > 0 ? 1 : -1, sharp: Math.abs(d) > 125, street: WP[i][3], pre: false, now: false });
+}
+POIS.forEach(p => { p.at = p.km * 1000; p.played = false; p.heard = false; p.x = SX(p.lon); p.y = SY(p.lat); });
+
+// ---------- Map rendering ----------
+const routeD = pts.map((p, i) => (i ? "L" : "M") + SX(p[1]).toFixed(1) + " " + SY(p[0]).toFixed(1)).join(" ");
+const seineA = [[52.5262,13.2900],[52.5250,13.3000],[52.5215,13.3110],[52.5195,13.3200],[52.5205,13.3300],[52.5190,13.3420],[52.5185,13.3520],[52.5200,13.3620],[52.5210,13.3730],[52.5208,13.3830],[52.5212,13.3900],[52.5222,13.3960],[52.5205,13.4010],[52.5190,13.4030],[52.5168,13.4048],[52.5145,13.4075],[52.5132,13.4150],[52.5120,13.4250]]; // Spree (skitse)
+const seineB = [[52.5222,13.3960],[52.5195,13.3970],[52.5175,13.3990],[52.5158,13.4005],[52.5140,13.4030],[52.5135,13.4060],[52.5145,13.4075]]; // Kupfergraben
+const kanal = [[52.5175,13.3180],[52.5120,13.3330],[52.5080,13.3440],[52.5060,13.3540],[52.5052,13.3630],[52.5045,13.3680],[52.5030,13.3760],[52.5015,13.3850],[52.5000,13.3960]]; // Landwehrkanal
+const pd = a => a.map((p, i) => (i ? "L" : "M") + SX(p[1]).toFixed(1) + " " + SY(p[0]).toFixed(1)).join(" ");
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+
+function buildMap(svg, opts) {
+  svg.innerHTML = "";
+  el("rect", { x: -200, y: -200, width: 1200, height: 900, fill: "#102342" }, svg);
+  const g = el("g", { fill: "none", stroke: "#2F6FDB", "stroke-opacity": .42, "stroke-width": opts.seine, "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
+  el("path", { d: pd(seineA) }, g); el("path", { d: pd(seineB) }, g); el("path", { d: pd(kanal), "stroke-width": opts.seine * .55 }, g);
+  el("path", { d: routeD, fill: "none", stroke: "#B5E61D", "stroke-opacity": opts.dimRoute ? .35 : 1, "stroke-width": opts.route, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  const done = el("path", { d: "", fill: "none", stroke: "#B5E61D", "stroke-width": opts.route, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  const fences = [];
+  if (opts.fences) POIS.forEach(p => fences.push(el("circle", { cx: p.x, cy: p.y, r: p.r / UNIT_M, fill: "#2F6FDB", "fill-opacity": .08, stroke: "#8DB2F2", "stroke-width": .5, "stroke-dasharray": "2 2" }, svg)));
+  const bubbles = POIS.map(p => {
+    const b = el("g", {}, svg);
+    el("circle", { cx: p.x, cy: p.y, r: opts.bubble, fill: "#2F6FDB", stroke: "#0A1A33", "stroke-width": opts.bubble * .25 }, b);
+    el("text", { x: p.x, y: p.y + opts.bubble * .36, "text-anchor": "middle", "font-size": opts.bubble, "font-weight": 700, fill: "#FFFFFF", "font-family": "Manrope, sans-serif" }, b).textContent = p.n;
+    return b;
+  });
+  const s = [SX(WP[0][2]), SY(WP[0][1])], f = [SX(WP[WP.length-1][2]), SY(WP[WP.length-1][1])];
+  el("rect", { x: f[0] - opts.bubble, y: f[1] - opts.bubble, width: opts.bubble * 2, height: opts.bubble * 2, rx: opts.bubble * .3, fill: "#FFFFFF", stroke: "#0A1A33", "stroke-width": opts.bubble * .3 }, svg);
+  el("circle", { cx: s[0], cy: s[1], r: opts.bubble * 1.25, fill: "#B5E61D", stroke: "#0A1A33", "stroke-width": opts.bubble * .3 }, svg);
+  if (opts.labels) [[t().mapStart, s[0] - 4, s[1] + 34, "middle"], [t().mapEiffel, f[0] + 4, f[1] + 34, "middle"], ["Ku'damm", SX(13.318), SY(52.5012) + 34, "middle"], ["Potsdamer Platz", SX(13.3765), SY(52.5094) + 40, "middle"], ["Alexanderplatz", SX(13.4133) - 10, SY(52.5216) - 22, "end"], ["Schloss", SX(13.2957), SY(52.5206) - 22, "middle"]]
+    .forEach(([t, x, y, a]) => { el("text", { x, y, "text-anchor": a, "font-size": 20, "font-weight": 700, fill: "rgba(255,255,255,.85)", "font-family": "Manrope, sans-serif" }, svg).textContent = t; });
+  const runnerHalo = el("circle", { cx: -99, cy: -99, r: opts.runner * 2.2, fill: "#FFFFFF", "fill-opacity": .18 }, svg);
+  const runner = el("circle", { cx: -99, cy: -99, r: opts.runner, fill: "#FFFFFF", stroke: "#2F6FDB", "stroke-width": opts.runner * .45 }, svg);
+  let zone = null;
+  if (opts.fences) zone = el("circle", { cx: SX(WP[0][2]), cy: SY(WP[0][1]), r: START_R / UNIT_M, fill: "#FF5A5F", "fill-opacity": .22, stroke: "#FF5A5F", "stroke-width": .8 }, svg);
+  svg.appendChild(runnerHalo); svg.appendChild(runner);
+  return { done, bubbles, fences, runner, runnerHalo, zone };
+}
+let mOver = buildMap(document.getElementById("mapOverview"), { seine: 12, route: 6, bubble: 11, runner: 10, labels: true });
+const mRun = buildMap(document.getElementById("mapRun"), { seine: 5, route: 1.8, bubble: 3.1, runner: 2.3, fences: true, dimRoute: true });
+const mSum = buildMap(document.getElementById("mapSum"), { seine: 12, route: 6, bubble: 11, runner: 0.01 });
+const svgRun = document.getElementById("mapRun");
+
+function donePath(m) {
+  const p = posAt(m); let d = "";
+  for (let i = 0; i <= p.seg; i++) d += (i ? "L" : "M") + SX(pts[i][1]).toFixed(1) + " " + SY(pts[i][0]).toFixed(1) + " ";
+  return d + "L" + SX(p.lon).toFixed(1) + " " + SY(p.lat).toFixed(1);
+}
+
+// POI list
+const listEl = document.getElementById("poiList");
+function buildList() {
+listEl.innerHTML = "";
+POIS.forEach(p => { const li = document.createElement("li"); li.id = "poi-" + p.n; li.innerHTML = `<span class="num">${p.n}</span><span class="n"></span><span class="k">${kmFmt(p.km)}</span>`; li.querySelector(".n").textContent = p.name[LANG]; if (p.played) li.classList.add("done"); listEl.appendChild(li); });
+}
+
+// ---------- Audio: music + ducking ----------
+let ctx = null, musicGain = null, analyser = null, musicMode = "demo", demoTimer = null, fileAudio = null, fileSrc = null;
+const FULL = 0.9, DUCK = 0.15;
+function ensureAudio() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  musicGain = ctx.createGain(); musicGain.gain.value = FULL;
+  analyser = ctx.createAnalyser(); analyser.fftSize = 64;
+  const comp = ctx.createDynamicsCompressor();
+  musicGain.connect(analyser); analyser.connect(comp); comp.connect(ctx.destination);
+}
+let noiseBuf = null;
+function startDemo() {
+  stopDemo(); ensureAudio();
+  if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, ctx.sampleRate * .2, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const bpm = 124, step = 60 / bpm / 4; let next = ctx.currentTime + .05, n = 0;
+  const roots = [110, 87.31, 130.81, 98];       // A F C G
+  const chords = [[220,261.63,329.63],[174.61,220,261.63],[261.63,329.63,392],[196,246.94,293.66]];
+  const bassPat = [1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0];
+  function kick(t){ const o=ctx.createOscillator(),g=ctx.createGain(); o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(42,t+.18); g.gain.setValueAtTime(.9,t); g.gain.exponentialRampToValueAtTime(.001,t+.3); o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+.32); }
+  function hat(t,v){ const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain(); s.buffer=noiseBuf; f.type="highpass"; f.frequency.value=7000; g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+.05); s.connect(f); f.connect(g); g.connect(musicGain); s.start(t); s.stop(t+.06); }
+  function bass(t,fr){ const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(); o.type="sawtooth"; o.frequency.value=fr; f.type="lowpass"; f.frequency.value=600; g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.2); o.connect(f); f.connect(g); g.connect(musicGain); o.start(t); o.stop(t+.22); }
+  function pad(t,ch){ ch.forEach(fr=>{ const o=ctx.createOscillator(),g=ctx.createGain(); o.type="triangle"; o.frequency.value=fr; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.045,t+.3); g.gain.linearRampToValueAtTime(0,t+step*16); o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+step*16+.05); }); }
+  demoTimer = setInterval(() => {
+    while (next < ctx.currentTime + .2) {
+      const s = n % 16, bar = Math.floor(n / 16) % 4;
+      if (s % 4 === 0) kick(next);
+      if (s % 4 === 2) hat(next, .14); else if (s % 2 === 1) hat(next, .05);
+      if (bassPat[s]) bass(next, roots[bar]);
+      if (s === 0) pad(next, chords[bar]);
+      next += step; n++;
+    }
+  }, 50);
+}
+function stopDemo() { if (demoTimer) clearInterval(demoTimer); demoTimer = null; }
+function startMusic() {
+  ensureAudio(); if (ctx.state === "suspended") ctx.resume();
+  stopDemo(); if (fileAudio) fileAudio.pause();
+  if (musicMode === "demo") startDemo();
+  else if (musicMode === "file" && fileAudio) { fileAudio.play().catch(() => {}); }
+}
+function stopMusic() { stopDemo(); if (fileAudio) fileAudio.pause(); }
+let ducked = false, unduckTimer = null;
+function duck(on) {
+  if (!ctx) return;
+  clearTimeout(unduckTimer);
+  if (on) { if (!ducked) { musicGain.gain.setTargetAtTime(DUCK, ctx.currentTime, .12); ducked = true; } }
+  else unduckTimer = setTimeout(() => { musicGain.gain.setTargetAtTime(FULL, ctx.currentTime, .25); ducked = false; }, 500);
+}
+
+// ---------- Speech ----------
+const synth = window.speechSynthesis || null;
+let voice = null;
+const failedVoices = new Set();
+// Chrome og Edge på macOS ignorerer ofte valget af Apples egne stemmer (Anna, Daniel …) og bruger systemets
+// standardstemme i stedet. Netstemmer (Google …, Microsoft … Online) virker. Derfor foretrækkes de her.
+const UA = navigator.userAgent || "";
+const MAC_CHROMIUM = /Mac/.test(navigator.platform || UA) && /Chrome\//.test(UA);
+let userVoice = {};
+try { userVoice = JSON.parse(localStorage.getItem("berlin-sightrun-voices") || "{}"); } catch (e) {}
+function voicesFor(lang) {
+  if (!synth) return [];
+  const pre = new RegExp("^" + lang, "i");
+  return synth.getVoices().filter(v => pre.test(v.lang));
+}
+// Vælger stemme til et sprog. Brugerens eget valg vinder; ellers en rangordning.
+// Rangordner stemmer: neurale/naturlige først, robotstemmer sidst.
+function voiceScore(v, l) {
+  const n = v.name.toLowerCase(), lg = (v.lang || "").toLowerCase().replace("_", "-"); let s = 0;
+  if (/natural/.test(n)) s += 100;
+  if (/premium/.test(n)) s += 90;
+  if (/enhanced|forbedret|erweitert|améliorée/.test(n)) s += 70;
+  if (/neural|wavenet|studio|siri/.test(n)) s += 70;
+  if (/^google/.test(n)) s += 50;
+  if (/multilingual/.test(n)) s += 10;
+  const good = { da: /christel|jeppe|sara|magnus|naja/, de: /katja|conrad|seraphina|florian|amala|killian|anna|petra|markus|yannick/, en: /sonia|ryan|libby|maisie|thomas|ava|andrew|emma|brian|serena|daniel|kate|jamie|stephanie|arthur|martha/, fr: /denise|henri|vivienne|remy|eloise|amélie|amelie|thomas|audrey|aurélie|marie/ }[l];
+  if (good && good.test(n)) s += 25;
+  if (/espeak|compact|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|wobble|organ|albert|fred|junior|ralph|jester|superstar|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley|hysterical|deranged|pipe/.test(n)) s -= 200;
+  if (v.localService === false) s += 5;
+  const want = LANGS[l].bcp.toLowerCase();
+  if (lg === want) s += 12; else if (l === "en" && lg === "en-us") s += 8;
+  return s;
+}
+function chooseVoice(lang) {
+  const cands = voicesFor(lang);
+  if (!cands.length) return null;
+  const mine = cands.find(v => v.name === userVoice[lang]);
+  if (mine && !failedVoices.has(mine.name)) return mine;
+  let ok = cands.filter(v => !failedVoices.has(v.name));
+  if (!ok.length) { cands.forEach(v => failedVoices.delete(v.name)); ok = cands; }
+  return ok.slice().sort((a, b) => voiceScore(b, lang) - voiceScore(a, lang))[0];
+}
+function fillVoiceSelect() {
+  const sel = document.getElementById("voiceSel");
+  const cands = voicesFor(LANG);
+  sel.innerHTML = "";
+  if (!cands.length) { const o = document.createElement("option"); o.textContent = "Ingen stemme til dette sprog"; sel.appendChild(o); sel.disabled = true; return; }
+  sel.disabled = false;
+  cands.sort((a, b) => voiceScore(b, LANG) - voiceScore(a, LANG));
+  cands.forEach(v => { const o = document.createElement("option"); o.value = v.name; o.textContent = `${v.name} · ${v.lang}${v.localService ? "" : " · net"}`; sel.appendChild(o); });
+  if (voice) sel.value = voice.name;
+}
+function pickVoice() {
+  const info = document.getElementById("voiceInfo");
+  if (!synth) { info.innerHTML = "Browseren har ingen tale. Beskederne vises som tekst på telefonen og i loggen."; return; }
+  const vs = synth.getVoices();
+  voice = chooseVoice(LANG);
+  fillVoiceSelect();
+  if (!vs.length) info.textContent = "Stemme: venter på browserens stemmer …";
+  else if (voice) info.innerHTML = `Bruger <b>${voice.name}</b> til ${LANGS[LANG].name}.` + (voiceScore(voice, LANG) < 40 ? ` Browseren har kun en simpel stemme på ${LANGS[LANG].name}. Den bedste lyd får du i Microsoft Edge (naturlige stemmer) eller i Safari med Premium-stemmer.` : " Stemmerne er sorteret efter kvalitet, bedste øverst.");
+  else info.innerHTML = `Der er ingen ${LANGS[LANG].name} stemme i denne browser, så teksten vises kun på skærmen. Chrome og Edge har stemmer på alle fire sprog.`;
+}
+if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; } else pickVoice();
+
+// Queue: prio 1 off-route, 2 turn, 3 narration, 4 km
+let queue = [], cur = null, token = 0, lastSpoken = null;
+const splitS = x => x.split(/(?<=[.!?])(?<!\b\d{1,2}\.)\s+(?=[A-ZÆØÅÉÀÂÇÈÊÎÔÛÄÖÜ0-9])/).flatMap(seg => {
+  if (seg.length <= 140) return [seg];
+  const out = []; let cur2 = "";
+  seg.split(/(?<=[,;:])\s+/).forEach(part => { if (cur2 && (cur2 + " " + part).length > 140) { out.push(cur2); cur2 = part; } else cur2 = cur2 ? cur2 + " " + part : part; });
+  if (cur2) out.push(cur2);
+  return out;
+});
+function enqueue(item) {
+  item.sentences = item.sentences || splitS(item.text); item.idx = item.idx || 0; item.lang = item.lang || LANG; item.queuedAt = item.queuedAt || performance.now();
+  logLine(item);
+  if (cur && item.prio < cur.prio) { const c = cur; cur = null; token++; cancelSpeech(); queue.unshift(c); }
+  queue.push(item); queue.sort((a, b) => a.prio - b.prio);
+  pump();
+}
+function pump() {
+  if (cur) return;
+  const now = state.m;
+  // drop stale items
+  queue = queue.filter(it => {
+    const stale = it.staleAfter && now > it.staleAfter;
+    if (stale && it.kind === "narr") logLine({ kind: "sys", text: `Fortællingen om ${it.title} blev sprunget over, fordi løberen var for langt forbi. Sæt farten ned.` });
+    return !stale;
+  });
+  const i = queue.findIndex(it => it.kind !== "narr" || it.force || distToNextTurn() > 150 || (it.queuedAt && performance.now() - it.queuedAt > 25000));
+  if (i < 0) { duck(false); updateNarrCard(); return; }
+  cur = queue.splice(i, 1)[0];
+  speakCur();
+}
+function speakCur() {
+  const it = cur; if (!it) return;
+  duck(true); updateNarrCard();
+  const my = ++token; const text = it.sentences[it.idx];
+  lastSpoken = it;
+  const done = () => { if (my !== token) return; it.idx++; if (it.idx < it.sentences.length) speakCur(); else { if (it.onDone) it.onDone(); cur = null; updateNarrCard(); pump(); } };
+  const v = synth ? chooseVoice(it.lang || LANG) : null;
+  if (synth && v) {
+    const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = it.lang ? LANGS[it.lang].bcp : v.lang; u.rate = 1; u.pitch = 1;
+    let started = false;
+    // Starter stemmen ikke, eller fejler den, prøver vi en anden stemme på samme sprog.
+    const fallback = () => {
+      if (my !== token) return;
+      failedVoices.add(v.name);
+      it.retries = (it.retries || 0) + 1;
+      const next = chooseVoice(it.lang || LANG);
+      logLine({ kind: "sys", text: `Stemmen ${v.name} startede ikke. Prøver ${next && next.name !== v.name ? next.name : "igen"}.` });
+      pickVoice();
+      cancelSpeech();
+      if (it.retries <= 3 && next) speakCur(); else { token++; const my2 = token; setTimeout(() => { if (my2 === token) { it.idx++; if (it.idx < it.sentences.length) speakCur(); else { if (it.onDone) it.onDone(); cur = null; updateNarrCard(); pump(); } } }, Math.max(1200, text.length * 65)); }
+    };
+    u.onstart = () => { started = true; it.retries = 0; it.errRetries = 0; };
+    const t0 = performance.now();
+    u.onend = () => { if (started || performance.now() - t0 > 400) done(); else fallback(); };
+    u.onerror = e => {
+      if (my !== token) return;
+      const code = e && e.error || "ukendt";
+      if (!started && !/interrupted|canceled/.test(code)) return fallback();
+      // Chrome afviser ofte en sætning lige efter et stop ("interrupted"). Så prøver vi den igen efter et øjeblik.
+      it.errRetries = (it.errRetries || 0) + 1;
+      if (it.errRetries <= 3) { logLine({ kind: "sys", text: `${v.name} meldte "${code}". Prøver sætningen igen.` }); token++; setTimeout(() => { if (cur === it) speakCur(); }, 250); }
+      else { it.errRetries = 0; setTimeout(done, 50); }
+    };
+    const go = () => { if (my === token) synth.speak(u); };
+    const pauseMs = 150 - (performance.now() - lastCancelAt);
+    if (pauseMs > 0) setTimeout(go, pauseMs); else go();
+    // Nogle browsere sender ikke onstart; taler de, regnes stemmen for at virke.
+    const watch = setInterval(() => { if (my !== token || started) return clearInterval(watch); if (synth.speaking) { started = true; clearInterval(watch); } }, 250);
+    setTimeout(() => { clearInterval(watch); if (my === token && !started && !(synth && synth.speaking)) fallback(); }, 5000);
+    // Sikkerhedsnet: nogle browsere sender ikke onend.
+    setTimeout(() => { if (my === token && started && synth && !synth.speaking) done(); }, Math.max(4000, text.length * 110));
+    // Fryser stemmen helt (taler "stadig" langt over tiden), går vi videre til næste sætning.
+    setTimeout(() => { if (my === token && started) { logLine({ kind: "sys", text: `${v.name} hang. Fortsætter med næste sætning.` }); token++; cancelSpeech(); setTimeout(() => { if (cur === it) { it.idx++; if (it.idx < it.sentences.length) speakCur(); else { if (it.onDone) it.onDone(); cur = null; updateNarrCard(); pump(); } } }, 160); } }, Math.max(9000, text.length * 160));
+  } else setTimeout(done, Math.max(1200, text.length * 65));
+}
+// Oversæt en besked, der allerede står i kø eller bliver talt, til et nyt sprog.
+function relocalize(it, l) {
+  let text = null;
+  if (it.kind === "narr" && it.poi) { text = it.poi.text[l]; it.title = it.poi.name[l]; }
+  else if (it.kind === "narr" && it.finish) { text = FINISH[l]; it.title = T[l].finishTitle; }
+  else if (it.kind === "turn" && it.mv) text = T[l][it.stage](T[l].turn(it.mv.dir, it.mv.sharp, it.mv.street));
+  else if (it.kind === "km" && it.k) text = T[l].kmCall(it.k, it.tot, it.split, it.avg);
+  else if (it.kind === "off") text = it.street ? T[l].off(it.street) : T[l].backOn;
+  else if (it.welcome) text = T[l].welcome;
+  else if (it.goStart) text = T[l].goToStart(`${it.goStart} ${T[l].distW}`);
+  if (!text) return;
+  const frac = it.sentences && it.sentences.length ? it.idx / it.sentences.length : 0;
+  it.text = text; it.sentences = splitS(text); it.lang = l;
+  it.idx = Math.min(it.sentences.length - 1, Math.floor(frac * it.sentences.length));
+}
+function relocalizeSpeech(l) {
+  queue.forEach(it => relocalize(it, l));
+  if (lastSpoken) relocalize(lastSpoken, l);
+  if (cur) { token++; cancelSpeech(); relocalize(cur, l); speakCur(); }
+}
+function skipNarr() { if (cur && cur.kind === "narr") { token++; cancelSpeech(); cur = null; pump(); } }
+function clearSpeech() { queue = []; cur = null; token++; cancelSpeech(); duck(false); updateNarrCard(); }
+function cancelSpeech() { if (synth) { synth.cancel(); lastCancelAt = performance.now(); } }
+
+// Chrome stopper netstemmer efter ca. 15 sekunder uden at melde færdig. Et kort pause/genoptag holder dem i gang.
+setInterval(() => { if (synth && synth.speaking && !synth.paused && voice && !voice.localService) { synth.pause(); synth.resume(); } }, 10000);
+// Efter et stop venter vi et øjeblik, før næste sætning sendes (Chrome afviser ellers ofte den næste).
+let lastCancelAt = 0;
+
+// ---------- Simulation state ----------
+const state = { running: false, m: 0, speed: 20, phase: "overview", off: null, nextKm: 1, heard: 0, elapsed: 0, splits: [], splitBase: 0, pre: null, preDone: false, greenUntil: 0 };
+function distToNextTurn() { const nx = MAN.find(x => x.at > state.m); return nx ? nx.at - state.m : Infinity; }
+
+function fmtTime(s) { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}` : `${m}:${String(ss).padStart(2, "0")}`; }
+const kmFmt = k => LANG === "en" ? k.toFixed(1) : k.toFixed(1).replace(".", ",");
+const kmStr = m => kmFmt(m / 1000);
+
+function setScreen(p) {
+  state.phase = p;
+  document.getElementById("scrOverview").hidden = p !== "overview";
+  document.getElementById("scrRun").hidden = p !== "run";
+  document.getElementById("scrSum").hidden = p !== "sum";
+}
+
+// Vækker talen inde i selve klikket, så browseren tillader netstemmer bagefter.
+let speechPrimed = false;
+function primeSpeech() {
+  if (!synth || speechPrimed) return;
+  speechPrimed = true;
+  try {
+    synth.cancel(); if (synth.resume) synth.resume();
+  } catch (e) {}
+}
+function start() {
+  primeSpeech();
+  ensureAudio(); if (ctx.state === "suspended") ctx.resume();
+  if (state.phase === "sum") reset();
+  setScreen("run");
+  state.running = true;
+  startMusic();
+  if (state.m < 1 && !state.preDone && document.getElementById("ckWalk").checked) {
+    state.pre = { lat: PRE_START[0], lon: PRE_START[1] };
+    const d = hav([state.pre.lat, state.pre.lon], pts[0]);
+    enqueue({ prio: 2, kind: "sys", goStart: Math.round(d / 10) * 10, text: t().goToStart(`${Math.round(d / 10) * 10} ${t().distW}`), force: true });
+  } else if (state.m < 1 && !state.preDone) {
+    state.preDone = true; state.greenUntil = performance.now() + 4000;
+    enqueue({ prio: 2, kind: "sys", text: t().welcome, welcome: true, force: true });
+  }
+  syncButtons(); last = performance.now(); requestAnimationFrame(tick);
+}
+function pause() { state.running = false; stopMusic(); if (synth) synth.pause && synth.pause(); syncButtons(); }
+function resume() { state.running = true; startMusic(); if (synth && synth.resume) synth.resume(); syncButtons(); last = performance.now(); requestAnimationFrame(tick); }
+function reset() {
+  state.running = false; state.m = 0; state.off = null; state.nextKm = 1; state.heard = 0; state.elapsed = 0; state.splits = []; state.splitBase = 0; state.pre = null; state.preDone = false; state.greenUntil = 0;
+  MAN.forEach(mv => { mv.pre = mv.now = false; }); POIS.forEach(p => { p.played = p.heard = false; });
+  clearSpeech(); stopMusic(); setScreen("overview");
+  document.getElementById("log").innerHTML = ""; logLine({ kind: "sys", text: "Simulationen er nulstillet." }, true);
+  document.querySelectorAll(".poilist li").forEach(li => li.classList.remove("done"));
+  document.getElementById("scrub").value = 0; render(); syncButtons();
+}
+function jumpTo(km) {
+  const m = Math.min(TOTAL - 50, km * 1000);
+  clearSpeech(); state.m = m; state.off = null; state.pre = null; state.preDone = true; state.nextKm = Math.floor(m / 1000) + 1;
+  state.elapsed = m / 1000 * PACE; state.splits = []; state.splitBase = m > 0 ? state.elapsed - (m % 1000) / m * state.elapsed : 0;
+  MAN.forEach(mv => { const passed = mv.at < m + 20; mv.pre = passed || (mv.at - m < 100); mv.now = passed; });
+  POIS.forEach(p => { p.played = p.at < m; if (p.played) document.getElementById("poi-" + p.n).classList.add("done"); else document.getElementById("poi-" + p.n).classList.remove("done"); });
+  if (state.phase === "overview") { setScreen("run"); }
+  logLine({ kind: "sys", text: `Hoppede til km ${kmStr(m)}.` }, true);
+  render();
+}
+
+let last = 0;
+function tick(now) {
+  if (!state.running) return;
+  const dt = Math.min(.25, (now - last) / 1000); last = now;
+  let sp = state.speed;
+  if (document.getElementById("ckSlow").checked && cur && (cur.kind === "narr" || cur.kind === "off")) sp = Math.min(sp, 2);
+  if (state.pre) {
+    // Gå mod startpunktet med 1,4 m/s
+    const d = hav([state.pre.lat, state.pre.lon], pts[0]), stepM = 1.4 * dt * sp;
+    if (d - stepM <= START_R * 0.6) {
+      state.pre = null; state.preDone = true; state.greenUntil = performance.now() + 4000;
+      enqueue({ prio: 2, kind: "sys", text: t().welcome, welcome: true, force: true });
+    } else {
+      const f = stepM / d; state.pre.lat += (pts[0][0] - state.pre.lat) * f; state.pre.lon += (pts[0][1] - state.pre.lon) * f;
+    }
+    render(); requestAnimationFrame(tick); return;
+  }
+  if (state.off) {
+    state.off.t += dt * sp; state.elapsed += dt * sp;
+    if (!state.off.warned && state.off.t > 10) { state.off.warned = true; enqueue({ prio: 1, kind: "off", street: WP[posAt(state.m).seg][3] || "Straße des 17. Juni", text: t().off(WP[posAt(state.m).seg][3] || "Straße des 17. Juni") }); }
+    if (state.off.t > 22) { state.off = null; enqueue({ prio: 1, kind: "off", text: t().backOn }); }
+  } else { state.m += 1000 / paceAt(state.m) * dt * sp; state.elapsed += dt * sp; }
+  checkTriggers();
+  render();
+  if (state.m >= TOTAL) { finish(); return; }
+  requestAnimationFrame(tick);
+}
+
+function checkTriggers() {
+  const m = state.m;
+  for (const mv of MAN) {
+    const d = mv.at - m;
+    if (!mv.pre && d <= 100 && d > 25) { mv.pre = true; enqueue({ prio: 2, kind: "turn", mv, stage: "pre", text: T[LANG].pre(phr(mv)), staleAfter: mv.at }); }
+    if (!mv.now && d <= 15) { mv.now = true; mv.pre = true; enqueue({ prio: 2, kind: "turn", mv, stage: "now", text: T[LANG].now(phr(mv)), staleAfter: mv.at + 60 }); flashTurn(); }
+  }
+  for (const p of POIS) {
+    if (p.played || m < p.at) continue;
+    p.played = true; document.getElementById("poi-" + p.n).classList.add("done");
+    if (!document.getElementById("ckNarr").checked) continue;
+    enqueue({ prio: 3, kind: "narr", poi: p, title: p.name[LANG], text: p.text[LANG], staleAfter: p.at + 4000, onDone: () => { p.heard = true; state.heard++; } });
+  }
+  if (m >= state.nextKm * 1000 && state.nextKm <= 21) {
+    const k = state.nextKm; state.nextKm++;
+    // Interpolér tidspunktet, hvor kilometeren præcis blev passeret.
+    const over = (m - k * 1000) * paceAt(m) / 1000;
+    const tot = Math.round(state.elapsed - over);
+    const prev = state.splits.length ? state.splits[state.splits.length - 1].tot : state.splitBase;
+    const sp = { k, tot, split: Math.round(tot - prev), avg: Math.round(tot / k) };
+    state.splits.push(sp);
+    if (document.getElementById("ckKm").checked) enqueue({ prio: 4, kind: "km", k, tot: sp.tot, split: sp.split, avg: sp.avg, text: t().kmCall(k, sp.tot, sp.split, sp.avg), staleAfter: k * 1000 + 400 });
+  }
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function finish() {
+  state.m = TOTAL; state.running = false; render();
+  enqueue({ prio: 2, kind: "narr", finish: true, title: t().finishTitle, text: FINISH[LANG], force: true, onDone: () => { stopMusic(); } });
+  document.getElementById("sumTime").textContent = fmtTime(state.elapsed);
+  document.getElementById("sumPace").textContent = fmtTime(state.elapsed / (TOTAL / 1000));
+  renderSplits();
+  setTimeout(() => { document.getElementById("sumHeard").textContent = `${state.heard}/20`; setScreen("sum"); syncButtons(); }, 1500);
+  syncButtons();
+}
+
+// ---------- Rendering ----------
+function renderStartIndicator() {
+  const box = document.getElementById("startInd");
+  const green = !state.pre && performance.now() < state.greenUntil;
+  box.hidden = !(state.pre || green);
+  const col = state.pre ? "#FF5A5F" : "#22C55E";
+  if (mRun.zone) { mRun.zone.setAttribute("fill", state.preDone ? "#22C55E" : "#FF5A5F"); mRun.zone.setAttribute("stroke", state.preDone ? "#22C55E" : "#FF5A5F"); }
+  if (box.hidden) return;
+  box.classList.toggle("ok", !state.pre);
+  document.getElementById("siRing").setAttribute("stroke", col);
+  document.getElementById("siDot").setAttribute("fill", col);
+  document.getElementById("siDot").setAttribute("r", state.pre ? 9 : 17);
+  document.getElementById("siCheck").setAttribute("opacity", state.pre ? 0 : 1);
+  if (state.pre) {
+    const d = hav([state.pre.lat, state.pre.lon], pts[0]);
+    document.getElementById("siTitle").textContent = t().toStart(`${Math.round(d / 10) * 10} m`);
+    document.getElementById("siSub").textContent = t().walkHint;
+  } else {
+    document.getElementById("siTitle").textContent = t().atStart;
+    document.getElementById("siSub").textContent = t().atStartSub;
+  }
+}
+function renderSplits() {
+  const box = document.getElementById("sumSplits"); box.innerHTML = "";
+  if (!state.splits.length) return;
+  const h = document.createElement("h4"); h.textContent = t().splitsTitle; box.appendChild(h);
+  const max = Math.max(...state.splits.map(x => x.split)), best = state.splits.reduce((a, b) => b.split < a.split ? b : a);
+  state.splits.forEach(x => {
+    const row = document.createElement("div"); row.className = "split" + (x === best ? " best" : "");
+    row.innerHTML = `<span class="k">${x.k}</span><div><div class="bar2" style="width:${(x.split / max * 100).toFixed(1)}%"></div></div><span class="v">${fmtTime(x.split)}${x === best ? " · " + t().fastest : ""}</span>`;
+    box.appendChild(row);
+  });
+}
+const turnIcon = document.getElementById("turnIcon");
+function flashTurn() { const c = document.getElementById("turnCard"); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 400); }
+function render() {
+  const m = state.m, p = posAt(m);
+  let x = SX(p.lon), y = SY(p.lat);
+  if (state.pre) { x = SX(state.pre.lon); y = SY(state.pre.lat); }
+  renderStartIndicator();
+  if (state.off) { const h = rad(p.hdg + 90); x += Math.sin(h) * 50 / UNIT_M * Math.min(1, state.off.t / 6); y -= Math.cos(h) * 50 / UNIT_M * Math.min(1, state.off.t / 6); }
+  [mOver, mRun].forEach(mm => { mm.runner.setAttribute("cx", x); mm.runner.setAttribute("cy", y); mm.runnerHalo.setAttribute("cx", x); mm.runnerHalo.setAttribute("cy", y); mm.done.setAttribute("d", m > 1 ? donePath(m) : ""); });
+  mSum.done.setAttribute("d", donePath(m));
+  svgRun.setAttribute("viewBox", `${(x - 56).toFixed(1)} ${(y - 52).toFixed(1)} 112 133`);
+  POIS.forEach((q, i) => { const op = q.played ? .45 : 1; mOver.bubbles[i].setAttribute("opacity", op); mRun.bubbles[i].setAttribute("opacity", op); });
+
+  document.getElementById("vKm").textContent = kmStr(m);
+  document.getElementById("vTime").textContent = fmtTime(state.elapsed);
+  document.getElementById("vPace").textContent = m > 200 ? fmtTime(state.elapsed / (m / 1000)) : "–:––";
+  const ls = state.splits[state.splits.length - 1];
+  const lastEl = document.getElementById("vLastKm");
+  lastEl.hidden = !ls; if (ls) lastEl.textContent = `${t().lastKm} ${fmtTime(ls.split)}`;
+  const kc = document.getElementById("kmCard");
+  kc.hidden = !(ls && m < ls.k * 1000 + 300);
+  if (!kc.hidden) {
+    document.getElementById("kmEyebrow").textContent = t().kmReached(ls.k);
+    document.getElementById("kmTot").textContent = fmtTime(ls.tot);
+    document.getElementById("kmSplit").textContent = fmtTime(ls.split);
+    document.getElementById("kmAvg").textContent = fmtTime(ls.avg);
+  }
+  document.getElementById("vProg").style.width = (m / TOTAL * 100).toFixed(1) + "%";
+  const np = POIS.find(q => q.at > m);
+  document.getElementById("vNext").innerHTML = np ? t().nextPoi("", kmStr(np.at - m)) : t().nextFinish;
+  if (np) document.querySelector("#vNext b").textContent = np.name[LANG];
+
+  const card = document.getElementById("turnCard");
+  if (state.pre) {
+    card.classList.remove("off");
+    document.getElementById("turnDist").textContent = `${Math.round(hav([state.pre.lat, state.pre.lon], pts[0]) / 10) * 10} m`;
+    document.getElementById("turnText").textContent = t().walkHint; turnIcon.style.transform = "rotate(-90deg)";
+  } else if (state.off && state.off.t > 3) {
+    card.classList.add("off"); document.getElementById("turnDist").textContent = t().offTitle;
+    document.getElementById("turnText").textContent = t().offSub; turnIcon.style.transform = "rotate(180deg)";
+  } else {
+    card.classList.remove("off");
+    const tn = MAN.find(q => q.at > m - 10);
+    if (tn && m < TOTAL - 5) {
+      const d = Math.max(0, tn.at - m);
+      document.getElementById("turnDist").textContent = d < 1000 ? `${Math.round(d / 10) * 10} m` : `${kmStr(d)} km`;
+      document.getElementById("turnText").textContent = cap(phr(tn));
+      turnIcon.style.transform = (tn.dir < 0 ? "scaleX(-1)" : "") + (tn.sharp ? " rotate(20deg)" : "");
+    } else { document.getElementById("turnDist").textContent = kmStr(TOTAL - m) + " km"; document.getElementById("turnText").textContent = T[LANG].straight; turnIcon.style.transform = "rotate(-90deg)"; }
+  }
+  document.getElementById("scrubOut").textContent = kmStr(m) + " km";
+  if (document.activeElement !== document.getElementById("scrub")) document.getElementById("scrub").value = (m / 1000).toFixed(1);
+}
+
+function updateNarrCard() {
+  const card = document.getElementById("narrCard");
+  const it = cur;
+  if (!it || it.kind === "km") { card.hidden = true; return; }
+  card.hidden = false;
+  const chip = document.getElementById("duckChip"); chip.textContent = t().ducked; chip.classList.add("on");
+  const eb = document.getElementById("narrEyebrow");
+  if (it.kind === "narr" && it.poi) { eb.textContent = T[it.lang].narrating(it.poi.n); document.getElementById("narrTitle").textContent = it.title; }
+  else if (it.kind === "narr") { eb.textContent = T[it.lang].finishTitle; document.getElementById("narrTitle").textContent = it.title; }
+  else if (it.kind === "turn") { eb.textContent = T[it.lang].guidance; document.getElementById("narrTitle").textContent = T[it.lang].turnAhead; }
+  else if (it.kind === "km") { eb.textContent = T[it.lang].kmTitle; document.getElementById("narrTitle").textContent = it.text.split(".")[0]; }
+  else if (it.kind === "off") { eb.textContent = T[it.lang].offKind; document.getElementById("narrTitle").textContent = T[it.lang].offTitle; }
+  else { eb.textContent = "Berlin Sightrun"; document.getElementById("narrTitle").textContent = T[it.lang].welcomeTitle; }
+  document.getElementById("narrLine").textContent = it.sentences[it.idx] || "";
+  document.getElementById("narrBar").style.width = ((it.idx + 1) / it.sentences.length * 100) + "%";
+}
+
+// ---------- Log ----------
+const TAG = { turn: ["turn", "Sving"], narr: ["narr", "Fortælling"], km: ["km", "Km"], off: ["off", "Afvigelse"], sys: ["sys", "App"] };
+function logLine(it, quiet) {
+  const log = document.getElementById("log"); const e = log.querySelector(".empty"); if (e) e.remove();
+  const li = document.createElement("li"); const [cls, lab] = TAG[it.kind] || TAG.sys;
+  li.innerHTML = `<span class="km">km ${kmStr(state.m)}</span><span class="tag ${cls}">${lab}</span><span class="txt"></span>`;
+  li.querySelector(".txt").textContent = it.kind === "narr" ? `${it.poi ? it.poi.n + ". " : ""}${it.title}: ${it.text.split(/(?<=[.!?])\s/)[0]} …` : it.text;
+  log.prepend(li); while (log.children.length > 80) log.lastChild.remove();
+}
+
+// ---------- Meter ----------
+const bars = [...document.querySelectorAll("#meter i")];
+const fbuf = new Uint8Array(32);
+(function meterLoop() {
+  if (analyser) { analyser.getByteFrequencyData(fbuf); bars.forEach((b, i) => { b.style.height = Math.max(8, fbuf[i * 2 + 1] / 255 * 100) + "%"; }); }
+  document.getElementById("meter").classList.toggle("ducked", ducked);
+  requestAnimationFrame(meterLoop);
+})();
+
+
+// ---------- Sprogvalg ----------
+function setLang(l) {
+  if (!T[l]) return;
+  LANG = l;
+  document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === l));
+  document.querySelectorAll("[data-t]").forEach(e => { const v = T[l][e.dataset.t]; if (typeof v === "string") e.textContent = v; });
+  mOver = buildMap(document.getElementById("mapOverview"), { seine: 12, route: 6, bubble: 11, runner: 10, labels: true });
+  buildList();
+  pickVoice();
+  relocalizeSpeech(l);
+  render();
+  renderSplits();
+  logLine({ kind: "sys", text: `Sprog: ${LANGS[l].name}. Nye beskeder kommer på ${LANGS[l].name}.` });
+}
+document.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+
+// ---------- Stemmevælger ----------
+document.getElementById("voiceSel").onchange = e => {
+  userVoice[LANG] = e.target.value; failedVoices.delete(e.target.value);
+  try { localStorage.setItem("berlin-sightrun-voices", JSON.stringify(userVoice)); } catch (err) {}
+  pickVoice();
+};
+document.getElementById("btnTestVoice").onclick = () => {
+  if (!synth || !voice) return;
+  if (cur) { logLine({ kind: "sys", text: "Test venter, til appen er færdig med at tale." }); return; }
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(T[LANG].welcome.split(". ")[0] + "."); u.voice = voice; u.lang = voice.lang; u.rate = 1;
+  synth.speak(u);
+  logLine({ kind: "sys", text: `Test af ${voice.name}.` });
+};
+
+// ---------- Controls ----------
+function syncButtons() {
+  const bs = document.getElementById("btnStart"), bp = document.getElementById("btnPause");
+  bs.textContent = state.phase === "overview" ? "Start løb" : state.phase === "sum" ? "Løb igen" : (state.running ? "Kører …" : "Fortsæt");
+  bs.disabled = state.running;
+  bp.disabled = !state.running;
+  document.getElementById("btnOff").disabled = !state.running || !!state.off;
+  document.getElementById("btnPausePhone").setAttribute("aria-label", state.running ? "Pause" : "Fortsæt");
+  document.getElementById("icoPause").innerHTML = state.running ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>' : '<path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z"/>';
+}
+const goStart = () => { if (state.phase === "run" && !state.running) resume(); else start(); };
+document.getElementById("btnStart").onclick = goStart;
+document.getElementById("ctaStart").onclick = start;
+document.getElementById("ctaAgain").onclick = reset;
+document.getElementById("btnPause").onclick = pause;
+document.getElementById("btnPausePhone").onclick = () => state.running ? pause() : (state.phase === "run" ? resume() : start());
+document.getElementById("btnReset").onclick = reset;
+document.getElementById("btnSkip").onclick = skipNarr;
+document.getElementById("btnRepeat").onclick = () => { if (lastSpoken) { const c = Object.assign({}, lastSpoken, { idx: 0, prio: Math.min(lastSpoken.prio, 2), force: true, staleAfter: null, onDone: null }); enqueue(c); } };
+document.getElementById("btnOff").onclick = () => { state.off = { t: 0, warned: false }; logLine({ kind: "sys", text: "Løberen drejer forkert og løber væk fra ruten." }); syncButtons(); };
+document.querySelectorAll("#speedSeg button").forEach(b => b.onclick = () => { document.querySelectorAll("#speedSeg button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.speed = +b.dataset.v; });
+const scrub = document.getElementById("scrub");
+scrub.oninput = () => { document.getElementById("scrubOut").textContent = (+scrub.value).toFixed(1).replace(".", ",") + " km"; };
+scrub.onchange = () => { jumpTo(+scrub.value); syncButtons(); };
+const fileIn = document.getElementById("musicFile");
+document.querySelectorAll("#musicSeg button").forEach(b => b.onclick = () => {
+  if (b.dataset.v === "file" && !fileAudio) { fileIn.click(); return; }
+  document.querySelectorAll("#musicSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  musicMode = b.dataset.v; if (state.running) startMusic(); else stopMusic();
+});
+fileIn.onchange = () => {
+  const f = fileIn.files[0]; if (!f) return;
+  ensureAudio();
+  if (!fileAudio) { fileAudio = new Audio(); fileAudio.loop = true; fileSrc = ctx.createMediaElementSource(fileAudio); fileSrc.connect(musicGain); }
+  fileAudio.src = URL.createObjectURL(f);
+  document.querySelectorAll("#musicSeg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.v === "file"));
+  musicMode = "file"; logLine({ kind: "sys", text: `Musik: ${f.name}` });
+  if (state.running) startMusic();
+};
+document.addEventListener("visibilitychange", () => { if (document.hidden && state.running) pause(); });
+
+setLang("da"); document.getElementById("log").innerHTML = '<li class="empty" style="display:block;background:none;padding:0">Tryk Start løb. Her kommer alle beskeder, appen siger, med km og type.</li>'; syncButtons();
+})();
+</script>
+
+</body></html>
