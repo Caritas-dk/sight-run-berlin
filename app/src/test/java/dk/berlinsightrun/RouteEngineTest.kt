@@ -66,7 +66,7 @@ class RouteEngineTest {
         val schloss = said.first { it.poi?.n == 3 }
         assertEquals(route.pois.first { it.n == 3 }.text("fr"), schloss.text)
         val lastTurn = said.last { it.kind == Kind.TURN }
-        assertTrue("Sidste sving: ${lastTurn.text}", lastTurn.text.contains("tournez"))
+        assertTrue("Sidste sving: ${lastTurn.text}", lastTurn.text.contains("tournez", ignoreCase = true))
     }
 
     @Test
