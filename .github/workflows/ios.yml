@@ -35,7 +35,9 @@ jobs:
               if phones:
                   print(phones[0]["udid"]); break')
           echo "Simulator: $UDID"
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
           xcodebuild test \
+            -derivedDataPath build/dd \
             -project ios/BerlinSightrun.xcodeproj \
             -scheme BerlinSightrun \
             -destination "id=$UDID" \
@@ -44,6 +46,28 @@ jobs:
           grep -E "error:|Test Case .* (passed|failed)|XCTAssert|\*\* " test.log || true
           [ $status -eq 0 ] || tail -80 test.log
           exit $status
+
+      - name: Tag skærmbilleder i simulatoren
+        shell: bash {0}
+        run: |
+          APP=build/dd/Build/Products/Debug-iphonesimulator/BerlinSightrun.app
+          mkdir -p screenshots
+          xcrun simctl boot "$SIM_UDID" 2>/dev/null; xcrun simctl bootstatus "$SIM_UDID" -b
+          xcrun simctl install "$SIM_UDID" "$APP"
+          xcrun simctl launch "$SIM_UDID" dk.berlinsightrun -lang da
+          sleep 12; xcrun simctl io "$SIM_UDID" screenshot screenshots/1-forside.png
+          xcrun simctl terminate "$SIM_UDID" dk.berlinsightrun
+          xcrun simctl launch "$SIM_UDID" dk.berlinsightrun -lang da -demoStartKm 16.2
+          sleep 25; xcrun simctl io "$SIM_UDID" screenshot screenshots/2-loeb.png
+          xcrun simctl terminate "$SIM_UDID" dk.berlinsightrun
+          xcrun simctl launch "$SIM_UDID" dk.berlinsightrun -lang en -demoStartKm 20.9
+          sleep 45; xcrun simctl io "$SIM_UDID" screenshot screenshots/3-resultat.png
+          ls -la screenshots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-skaermbilleder
+          path: screenshots/*.png
 
       - name: Byg til iPhone (uden signering)
         shell: bash {0}
