@@ -51,7 +51,7 @@ Mappen `ios/` er en komplet iPhone-app i SwiftUI med samme rute, fortællinger, 
 3. Vælg en iPhone-simulator, og tryk ▶. Demo-løbet virker i simulatoren.
 4. Til en rigtig iPhone: vælg dit udviklerteam under *Signing & Capabilities* (et gratis Apple-id er nok), slut telefonen til, og tryk ▶.
 
-Testene af rutemotoren kører med ⌘U. De er de samme som Android-appens.
+Testene af rutemotoren kører med ⌘U. De er de samme som Android-appens. Til skærmbilleder kan appen startes med `-demoStartKm 16` (demo-løb fra km 16) og `-lang de` (sprog) under *Product › Scheme › Edit Scheme › Arguments*.
 
 Appen kræver iOS 17. Den bruger GPS og tale i baggrunden, så løbet fortsætter med slukket skærm, og den dæmper musik fra andre apps, mens den taler. Den vælger selv den bedste stemme på iPhonen (premium før forbedret før standard). Har telefonen kun en standardstemme på sproget, viser forsiden, hvor en bedre hentes: *Indstillinger › Tilgængelighed › Oplæst indhold › Stemmer*.
 

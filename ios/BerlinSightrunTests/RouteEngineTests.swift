@@ -179,4 +179,9 @@ final class RouteEngineTests: XCTestCase {
         XCTAssertEqual(Lang.da.strings.kmCall(5, 1773, 353, 355),
                        "5 kilometer. Tid: 29 minutter og 33 sekunder. Sidste kilometer: 5 minutter 53. Gennemsnit: 5 minutter 55 per kilometer.")
     }
+
+    func testKmFormattingMatchesAndroid() {
+        XCTAssertEqual(Lang.da.strings.km(50), "0,1")
+        XCTAssertEqual(Lang.en.strings.km(21_097.5), "21.1")
+    }
 }

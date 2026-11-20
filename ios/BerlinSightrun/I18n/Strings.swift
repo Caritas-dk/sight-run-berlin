@@ -279,7 +279,8 @@ struct Strings {
     func clock(_ sec: Int) -> String { Format.time(sec) }
 
     func km(_ m: Double) -> String {
-        String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), m / 1000.0)
+        // Runder 0,05 op som Androids String.format, så km-tallene er ens på begge platforme.
+        String(format: "%.1f", locale: Locale(identifier: "en_US_POSIX"), (m / 100).rounded(.toNearestOrAwayFromZero) / 10)
             .replacingOccurrences(of: ".", with: String(ui.decimalSeparator))
     }
 
