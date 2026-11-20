@@ -31,7 +31,7 @@ struct UIStrings {
     let eyebrowOff: String
     let eyebrowKm: String
     let musicDucked: String
-    let repeat: String
+    let `repeat`: String
     let pause: String
     let resume: String
     let skip: String

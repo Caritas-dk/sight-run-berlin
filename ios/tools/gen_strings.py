@@ -25,7 +25,9 @@ def sw(s): # kotlin literal -> swift literal (no templates in vals)
     assert "$" not in s, s
     return s
 out=["// GENERERET fra app/src/main/java/dk/berlinsightrun/i18n/Strings.kt af ios/tools/gen_strings.py.","// Ret teksterne i Kotlin-filen, og kør scriptet igen, så Android og iOS siger det samme.","","struct UIStrings {","    let decimalSeparator: Character"]
-out+= [f"    let {k}: String" for k in keys]
+SWIFT_KEYWORDS={"repeat","default","case","in","is","return","switch","where","while","for","if","else","do","catch","try","throw","import","class","struct","enum","func","let","var","static","self","super","init","deinit","extension","protocol","operator","subscript","typealias","associatedtype","break","continue","fallthrough","guard","defer","true","false","nil","as","Any","internal","private","public","fileprivate","open","inout","rethrows","throws"}
+def ident(k): return f"`{k}`" if k in SWIFT_KEYWORDS else k
+out+= [f"    let {ident(k)}: String" for k in keys]
 out.append("}\n\nextension UIStrings {")
 for c,(v,dec) in objs.items():
     out.append(f"    static let {c} = UIStrings(\n        decimalSeparator: \"{dec}\",")
